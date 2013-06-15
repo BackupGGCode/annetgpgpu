@@ -343,11 +343,8 @@ void SOMNet::Training(const unsigned int &iCycles) {
 		FindBMNeuron();
 
 		// Calculate the width of the neighborhood for this time step
-		if(m_fConscienceRate <= 0.f) {	// without conscience mechanism
-			m_fSigmaT = std::floor(m_DistFunction->decay(m_fSigma0, m_iCycle, m_fLambda) + 0.5f);
-		}
-
-		m_fLearningRateT = m_DistFunction->decay(m_fLearningRate, m_iCycle, m_iCycles);
+		m_fSigmaT 		= m_DistFunction->rad_decay(m_fSigma0, m_iCycle, m_fLambda);
+		m_fLearningRateT 	= m_DistFunction->lrate_decay(m_fLearningRate, m_iCycle, m_iCycles);
 
 		// Adjust the weight vector of the BMU and its neighbors
 		PropagateBW();
@@ -464,7 +461,6 @@ void SOMNet::FindBMNeuron() {
 	// implementation of conscience mechanism
 	//float fConscience = m_fConscienceRate * (m_pBMNeuron->GetValue() - m_pBMNeuron->GetConscience() ); 	// standard implementation seems to have some problems
 	//m_pBMNeuron->AddConscience(fConscience); 																// standard implementation seems to have some problems
-
 	if(m_fConscienceRate > 0.f) {
 		#pragma omp parallel for
 		for(int i = 0; i < static_cast<int>(m_pOPLayer->GetNeurons().size() ); i++) {
@@ -474,12 +470,16 @@ void SOMNet::FindBMNeuron() {
 		}
 	}
 	// end of implementation of conscience mechanism
-
 	assert(m_pBMNeuron != NULL);
 }
 
 void SOMNet::SetDistFunction (const DistFunction *pFCN) {
-	this->m_DistFunction = pFCN;
+	assert(pFCN != NULL);
+	this->m_DistFunction = const_cast<DistFunction *>(pFCN);
+}
+
+void SOMNet::SetDistFunction (const DistFunction &pFCN) {
+	this->m_DistFunction = const_cast<DistFunction *>(&pFCN);
 }
 
 const DistFunction *SOMNet::GetDistFunction() const {
@@ -488,9 +488,6 @@ const DistFunction *SOMNet::GetDistFunction() const {
 
 void SOMNet::SetConscienceRate(const float &fVal) {
 	m_fConscienceRate = fVal;
-
-	// standard radius for conscience mechanism (8 proximal nodes around BMU)
-	m_fSigmaT = sqrt(2.f);
 }
   
 float SOMNet::GetConscienceRate() {

@@ -390,7 +390,14 @@ std::vector<float> AbsNet::GetOutput() {
 void AbsNet::SetTransfFunction(const TransfFunction *pFunction) {
 	assert( pFunction != 0 );
 
-	m_pTransfFunction = pFunction;
+	m_pTransfFunction = const_cast<TransfFunction *>(pFunction);
+	for(unsigned int i = 0; i < m_lLayers.size(); i++) {
+		GetLayer(i)->SetNetFunction(m_pTransfFunction);
+	}
+}
+
+void AbsNet::SetTransfFunction(const TransfFunction &pFunction) {
+	m_pTransfFunction = const_cast<TransfFunction *>(&pFunction);
 	for(unsigned int i = 0; i < m_lLayers.size(); i++) {
 		GetLayer(i)->SetNetFunction(m_pTransfFunction);
 	}

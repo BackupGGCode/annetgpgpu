@@ -2,6 +2,7 @@
 #define _SOMKERNELS_
 
 #include "include/math/Random.h"
+#include "include/math/Functions.h"
 #include "include/gpgpu/Kernels.h"
 #include "include/gpgpu/Functors.h"
 #include "include/gpgpu/helper_cuda.h"
@@ -10,42 +11,31 @@
 #include <cassert>
 #include <cmath>
 
-//#include <omp.h>
+#include <omp.h>
+
+#include <thrust/extrema.h>
+#include <thrust/distance.h>
+#include <thrust/device_vector.h>
 
 using namespace ANNGPGPU;
 
 
-float hostGetMax(const thrust::device_vector<float>& vec, unsigned int &ID) {
-	// create implicit index sequence [0, 1, 2, ... ]
-	thrust::counting_iterator<unsigned int> begin(0);
-	thrust::counting_iterator<unsigned int> end(vec.size() );
-	thrust::tuple<float, unsigned int> init(vec[0], 0);
-	thrust::tuple<float, unsigned int> smallest;
-
-	smallest = reduce( thrust::make_zip_iterator(make_tuple(vec.begin(), begin) ),
-			thrust::make_zip_iterator(make_tuple(vec.end(), end) ),
-			init,
-			bigger_tuple_functor() );
-
-	ID = thrust::get<1>(smallest);
-	return vec[ID];
+// new reference implementation
+ANNGPGPU::BMUExport hostGetMin(std::vector<ANNGPGPU::BMUExport> &vec) {
+	assert(vec.size() > 0);
+	if(vec.size() > 1) {
+		std::sort(vec.begin(), vec.end() );
+	}
+	return *vec.begin();
 }
 
-float hostGetMin(const thrust::device_vector<float>& vec, unsigned int &ID) {
-	// create implicit index sequence [0, 1, 2, ... ]
-	thrust::counting_iterator<unsigned int> begin(0);
-	thrust::counting_iterator<unsigned int> end(vec.size() );
-	thrust::tuple<float, unsigned int> init(vec[0], 0);
-	thrust::tuple<float, unsigned int> smallest;
-	
-	smallest = reduce( thrust::make_zip_iterator(make_tuple(vec.begin(), begin) ),
-			thrust::make_zip_iterator(make_tuple(vec.end(), end) ),
-			init,
-			smaller_tuple_functor() );
-
-	ID = thrust::get<1>(smallest);
-	return vec[ID];
+// fast when maps are big
+std::pair<float, unsigned int> devGetMin(const thrust::device_vector<float> &vec) {
+	thrust::device_vector<float>::const_iterator d_min = thrust::min_element(vec.begin(), vec.end() );
+	unsigned int iID = thrust::distance(vec.begin(), d_min);
+	return std::pair<float, unsigned int>(*d_min, iID);
 }
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////
 /*
@@ -58,77 +48,60 @@ float hostGetMin(const thrust::device_vector<float>& vec, unsigned int &ID) {
  */
 BMUExport
 hostSOMFindBMNeuronID(std::vector<SplittedNetExport*> &SExp,
-		const float &fConscienceRate)
+		const float &fConscRate)
 {
-	BMUExport retBMU;
-	float fLastBMU = FLT_MAX;
+	BMUExport resBMU;
+	std::vector<ANNGPGPU::BMUExport> vBMUExp(SExp.size() );
 
-	omp_set_num_threads(SExp.size() );  	// create as many CPU threads as there are CUDA devices
-	#pragma omp parallel 			//for(int iDev = 0; iDev < static_cast<int>(SExp.size() ); iDev++) {
+	assert(SExp.size() > 0);
+	assert(vBMUExp.size() == SExp.size() );
+
+	omp_set_num_threads(SExp.size() );  							// create as many CPU threads as there are CUDA devices
+	#pragma omp parallel 									// for(int iDevID = 0; iDevID < static_cast<int>(SExp.size() ); iDevID++) {
 	{
-		unsigned int iDev = omp_get_thread_num();
-		checkCudaErrors(cudaSetDevice(iDev) );
-		unsigned int BMUID = 0;
-
-		unsigned int iWidth 	= SExp.at(iDev)->f2dEdges.GetW();
-		unsigned int iHeight 	= SExp.at(iDev)->f2dEdges.GetH();
+		unsigned int iDevID 	= omp_get_thread_num();
+		checkCudaErrors(cudaSetDevice(iDevID) );
+		
+		unsigned int iWidth 	= SExp.at(iDevID)->f2dEdges.GetW();
+		unsigned int iHeight 	= SExp.at(iDevID)->f2dEdges.GetH();
 
 		assert(iWidth 	> 0);
 		assert(iHeight 	> 0);
 
 		thrust::device_vector<float> dvRes(iWidth, 0.f);
-		thrust::device_vector<float> dvTmp(iWidth, 0.f); 			// temporary
-		thrust::device_vector<float> dvConscience(iWidth, 1.f / (float)iWidth);
 
-		for(unsigned int y = 0; y < iHeight; y++) {
-			thrust::transform(
-				SExp.at(iDev)->f2dEdges.GetRowBegin(y),			// input
-				SExp.at(iDev)->f2dEdges.GetRowEnd(y), 			// input
-				dvTmp.begin(), 						// result
-				minus_pow_functor((*SExp.at(iDev)->dvInput)[y]) ); 	// functor
-
-			thrust::transform(
-				dvRes.begin(), 						// input
-				dvRes.end(), 						// input
-				dvTmp.begin(),						// input
-				dvRes.begin(), 						// result
-				thrust::plus<float>() );				// functor
-		}
-
-		// implementation of conscience mechanism
-		if(fConscienceRate > 0.f) {
-			thrust::transform(
-				dvConscience.begin(),
-				dvConscience.end(),
-				SExp.at(iDev)->dvConscience->begin(),
-				dvConscience.begin(),
-				thrust::minus<float>() );
-
-			thrust::transform(
+		for(int y = 0; y < static_cast<int>(iHeight); y++) {               
+			thrust::transform(SExp.at(iDevID)->f2dEdges.GetRowBegin(y),
+				SExp.at(iDevID)->f2dEdges.GetRowEnd(y),
 				dvRes.begin(),
-				dvRes.end(),
-				dvConscience.begin(),
 				dvRes.begin(),
-				thrust::minus<float>() );
+				spowAmXpY_functor((*SExp.at(iDevID)->dvInput)[y]) );
 		}
 
-		thrust::transform(
-			dvRes.begin(),
-			dvRes.end(),
-			SExp.at(iDev)->dvConscience->begin(),
-			SExp.at(iDev)->dvConscience->begin(),
-			saxmy_functor(fConscienceRate) );
+		if(fConscRate > 0.f) { 								// Implementation of conscience mechanism
+			thrust::transform(dvRes.begin(),					// input
+				dvRes.end(),							// input
+				SExp.at(iDevID)->dvConscience->begin(),				// input
+				dvRes.begin(),							// result
+				sXmAmY_functor(1.f/(float)iWidth) );				// functor
 
-		hostGetMin(dvRes, BMUID);
-
-		// Check partial results for global BMU in all devices
-		if(fLastBMU > dvRes[BMUID]) {
-			fLastBMU = dvRes[BMUID];
-			thrust::host_vector<float> vPos = SExp.at(iDev)->f2dPositions.GetSubArrayY(BMUID);
-			retBMU = BMUExport(BMUID, iDev, vPos);
+			thrust::transform(dvRes.begin(),					// input
+				dvRes.end(),							// input
+				SExp.at(iDevID)->dvConscience->begin(),				// input
+				SExp.at(iDevID)->dvConscience->begin(),				// result
+				sAXmY_functor(fConscRate) );					// functor
 		}
+
+		std::pair<float, unsigned int> pCurBMUVal = devGetMin(dvRes);
+		BMUExport BMU(pCurBMUVal.first, pCurBMUVal.second, iDevID);
+		vBMUExp[iDevID] = BMU;
 	}
-	return retBMU;
+
+	resBMU = hostGetMin(vBMUExp);
+	checkCudaErrors(cudaSetDevice(resBMU.iDeviceID) );
+	resBMU.dvBMUPos = SExp.at(resBMU.iDeviceID)->f2dPositions.GetSubArrayY(resBMU.iBMUID);
+
+	return resBMU;
 }
 
 /*
@@ -147,74 +120,54 @@ void hostSOMPropagateBW( std::vector<SplittedNetExport*> &SExp,
 		const BinaryFunction &binaryDistFunc
 		)
 {
-	omp_set_num_threads(SExp.size() );  	// create as many CPU threads as there are CUDA devices
-	#pragma omp parallel 			//for(int iDev = 0; iDev < static_cast<int>(SExp.size() ); iDev++) {
+	omp_set_num_threads(SExp.size() );  							// create as many CPU threads as there are CUDA devices
+	#pragma omp parallel 									// for(int iDev = 0; iDev < static_cast<int>(SExp.size() ); iDev++) {
 	{
-		unsigned int iDev = omp_get_thread_num();
-		checkCudaErrors(cudaSetDevice(iDev) );
+		unsigned int iDevID 	= omp_get_thread_num();
+		checkCudaErrors(cudaSetDevice(iDevID) );
 		
-		unsigned int iWidth 	= SExp.at(iDev)->f2dPositions.GetW();
-		unsigned int iHeight 	= SExp.at(iDev)->f2dPositions.GetH();
+		unsigned int iWidth 	= SExp.at(iDevID)->f2dPositions.GetW();
+		unsigned int iHeight 	= SExp.at(iDevID)->f2dPositions.GetH();
 
-		thrust::device_vector<float> dvTmp(iWidth, 0.f); 			// temporary
-		thrust::device_vector<float> dvInfluence(iWidth, 0.f);
+		thrust::device_vector<float> dvTmp(iWidth, pow(fSigmaT, 2) ); 			// temporary
+		thrust::device_vector<float> dvInfl(iWidth, 0.f);
 		thrust::device_vector<float> dvDist(iWidth, 0.f);
 
-		// 1. Calc distances for all neurons to BMNeuron
-		// Distance = sqrt(pow(x,2)+pow(y,2)+pow(z,2)+pow(n+1,2) );
+		// 1. Calc distances for all neurons to BMNeuron: Distance = sqrt(pow(x,2)+pow(y,2)+pow(z,2)+pow(n+1,2) )
 		for(int y = 0; y < static_cast<int>(iHeight); y++) { 				// for each coordinate position of the neuron
 			thrust::transform(
-				SExp.at(iDev)->f2dPositions.GetRowBegin(y),		// input
-				SExp.at(iDev)->f2dPositions.GetRowEnd(y), 		// input
-				dvTmp.begin(), 						// result
-				minus_pow_functor(BMU.dvBMUPos[y]) ); 			// functor
-
-			thrust::transform(
-				dvDist.begin(), 					// input
-				dvDist.end(), 						// input
-				dvTmp.begin(),						// input
-				dvDist.begin(), 					// result
-				thrust::plus<float>() );				// functor
+				SExp.at(iDevID)->f2dPositions.GetRowBegin(y),
+				SExp.at(iDevID)->f2dPositions.GetRowEnd(y),
+				dvDist.begin(),
+				dvDist.begin(),
+				spowAmXpY_functor(BMU.dvBMUPos[y]) );
 		}
 
-		thrust::transform(
-			dvDist.begin(),							// input
-			dvDist.end(), 							// input
-			dvDist.begin(), 						// result
-			sqrt_functor() );						// functor
-
 		// 2. Calculate the influence for each neuron
-		thrust::transform(
-			dvDist.begin(),							// input
-			dvDist.end(), 							// input
-			dvInfluence.begin(), 						// result
-			binaryDistFunc );						// functor
+		thrust::transform( dvDist.begin(),						// input
+			dvDist.end(), 								// input
+			dvInfl.begin(), 							// result
+			binaryDistFunc );							// functor
 
 		// 3. Only handle neurons in radius:
 		// 3a. Make stencil
-		dvTmp.assign(iWidth, fSigmaT);
-		thrust::transform(
-			dvDist.begin(), 						// input 1
-			dvDist.end(),							// input 1
-			dvTmp.begin(),							// input 1
-			dvTmp.begin(), 							// result
-			thrust::less<float>() 						// functor
+		thrust::transform( dvDist.begin(), 						// input
+			dvDist.end(),								// input
+			dvTmp.begin(),								// input
+			dvTmp.begin(), 								// result
+			thrust::less<float>() 							// functor
 		);
-
 		// 3b. Use stencil to modify only neurons inside the radius
-		// Save result in the ANN::F2DArray
-		iWidth 	= SExp.at(iDev)->f2dEdges.GetW();
-		iHeight = SExp.at(iDev)->f2dEdges.GetH();
-
+		iWidth 	= SExp.at(iDevID)->f2dEdges.GetW();
+		iHeight = SExp.at(iDevID)->f2dEdges.GetH();
 		for(int y = 0; y < static_cast<int>(iHeight); y++) {				// for each edge of the neuron
-			thrust::transform_if(
-				SExp.at(iDev)->f2dEdges.GetRowBegin(y),			// input 1
-				SExp.at(iDev)->f2dEdges.GetRowEnd(y), 			// input 1
-				dvInfluence.begin(),					// input 2
-				dvTmp.begin(),						// stencil
-				SExp.at(iDev)->f2dEdges.GetRowBegin(y), 		// result
-				hebbian_functor(fLearningRate, (*SExp.at(iDev)->dvInput)[y]), // functor
-				thrust::identity<int>() ); 				// predicate
+			thrust::transform_if( SExp.at(iDevID)->f2dEdges.GetRowBegin(y),		// input 1
+				SExp.at(iDevID)->f2dEdges.GetRowEnd(y), 			// input 1
+				dvInfl.begin(),							// input 2
+				dvTmp.begin(),							// stencil
+				SExp.at(iDevID)->f2dEdges.GetRowBegin(y), 			// result
+				hebbian_functor(fLearningRate, (*SExp.at(iDevID)->dvInput)[y]), // functor
+				thrust::identity<int>() ); 					// predicate
 		}
 	}
 }
@@ -224,85 +177,91 @@ void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 		const unsigned int &iCycles,
 		const float &fSigma0, 
 		const float &fLearningRate0,
-		const float &fConscienceRate,
-		float (*pfnDecay)(const float &, const float &, const float &),
+		const float &fConscRate,
 		const ANN::DistFunction &DistFunc )
 {
 	float fLambda 	= iCycles / log(fSigma0);
 
 	int iMin 		= 0;
 	int iMax 		= InputSet.GetNrElements()-1;
-	unsigned int iProgCount = 1;
+	int iProgCount 		= 1;
+	float fSigmaT 		= fSigma0;
+	float fLearningRate 	= fLearningRate0;
 
-	// use 8 proximal neurons as standard
-	float fSigmaT = sqrt(2.f);
-
-	for(unsigned int i = 0; i < iCycles; i++) {
+	for(int i = 0; i < static_cast<int>(iCycles); i++) {
 		if(iCycles >= 10) {
 			if(((i+1) / (iCycles/10)) == iProgCount && (i+1) % (iCycles/10) == 0) {
 				std::cout<<"Current training progress calculated by the GPU is: "<<iProgCount*10.f<<"%/Step="<<i+1<<std::endl;
 				iProgCount++;
 			}
-		}
+		} 
 		else {
 			std::cout<<"Current training progress calculated by the CPU is: "<<(float)(i+1.f)/(float)iCycles*100.f<<"%/Step="<<i+1<<std::endl;
 		}
 
-		// Set input
+		// Set Input
 		std::vector<float> vCurInput = InputSet.GetInput(ANN::RandInt(iMin, iMax) );
-		
-		for(int iDev = 0; iDev < static_cast<int>(SExp.size() ); iDev++) {
-			checkCudaErrors(cudaSetDevice(iDev) );
+		for(int iDevID = 0; iDevID < static_cast<int>(SExp.size() ); iDevID++) {
+			checkCudaErrors(cudaSetDevice(iDevID) );
+
 			thrust::device_vector<float> *p_dvInputVector = new thrust::device_vector<float>(vCurInput.size() );
 			thrust::copy(vCurInput.begin(), vCurInput.end(), p_dvInputVector->begin() );
-			SExp[iDev]->dvInput = p_dvInputVector;
+			SExp[iDevID]->dvInput = p_dvInputVector;
 		}
 
-		// Find BMNeuron
-		BMUExport BMUExp = hostSOMFindBMNeuronID(SExp, fConscienceRate);
+		// Calc fSigmaT if conscience is _not_ used
+		fSigmaT 	= DistFunc.rad_decay(fSigma0, i, iCycles); 			// SM 1.3
+		fLearningRate 	= DistFunc.lrate_decay(fLearningRate0, i, iCycles); 		// SM 1.3
 
-		// Calc m_fSigmaT if conscience is _not_ used
-		if(fConscienceRate <= 0.f) {
-			fSigmaT = std::floor(pfnDecay(fSigma0, i, fLambda) + 0.5f);
-		}
-		float fLearningRate = pfnDecay(fLearningRate0, i, iCycles);
-
-		// Propagate BW
+		// Find BMNeuron 
+		BMUExport BMUExp = hostSOMFindBMNeuronID(SExp, fConscRate);
+ 
+		// Propagate BW SM 2.0
+#if __CUDA_ARCH__ >= 200
+#warning Compiling with SM 2.0 or higher.
+		external_device_func_t *dvFuncPtr = NULL;
+		*dvFuncPtr 	= DistFunc.distance; 						// SM 2.0
+		assert(dvFuncPtr != NULL);
+		hostSOMPropagateBW( SExp,
+			BMUExp,
+			fSigmaT,
+			fLearningRate,
+			sm20distance_functor(fSigmaT, dvFuncPtr));
+#else //__CUDA_ARCH__ < 200
+#warning Compiling with SM 1.3 or less.
+		// Propagate BW SM 1.3
 		if (strcmp (DistFunc.name, "gaussian") == 0) {
 			hostSOMPropagateBW( SExp,
-					BMUExp,				// const
-					fSigmaT,			// const
-					fLearningRate,
-					gaussian_functor(fSigmaT)); 	// const
-		}
-		else if (strcmp (DistFunc.name, "mexican") == 0) {
+					BMUExp,							// const
+					fSigmaT,						// const
+					fLearningRate,						// const
+					sm13gaussian_functor(fSigmaT)); 			// const
+		} else if (strcmp (DistFunc.name, "mexican") == 0) {
 			hostSOMPropagateBW( SExp,
-					BMUExp,				// const
-					fSigmaT,			// const
-					fLearningRate,
-					mexican_functor(fSigmaT)); 	// const
-		}
-		else if (strcmp (DistFunc.name, "bubble") == 0) {
+					BMUExp,							// const
+					fSigmaT,						// const
+					fLearningRate,						// const
+					sm13mexican_functor(fSigmaT)); 				// const
+		} else if (strcmp (DistFunc.name, "bubble") == 0) {
 			hostSOMPropagateBW( SExp,
-					BMUExp,				// const
-					fSigmaT,			// const
-					fLearningRate,
-					bubble_functor(fSigmaT)); 	// const
-		}
-		else if (strcmp (DistFunc.name, "cut_gaussian") == 0) {
+					BMUExp,							// const
+					fSigmaT,						// const
+					fLearningRate,						// const
+					sm13bubble_functor(fSigmaT)); 				// const
+		} else if (strcmp (DistFunc.name, "cutgaussian") == 0) {
 			hostSOMPropagateBW( SExp,
-					BMUExp,				// const
-					fSigmaT,			// const
-					fLearningRate,
-					cut_gaussian_functor(fSigmaT)); // const
-		}
-		else if (strcmp (DistFunc.name, "epanechicov") == 0) {
+					BMUExp,							// const
+					fSigmaT,						// const
+					fLearningRate,						// const
+					sm13cut_gaussian_functor(fSigmaT)); 			// const
+		} else if (strcmp (DistFunc.name, "epanechicov") == 0) {
 			hostSOMPropagateBW( SExp,
-					BMUExp,				// const
-					fSigmaT,			// const
-					fLearningRate,
-					epanechicov_functor(fSigmaT)); 	// const
+					BMUExp,							// const
+					fSigmaT,						// const
+					fLearningRate,						// const
+					sm13epanechicov_functor(fSigmaT)); 			// const
 		}
+#endif
 	}
 }
 

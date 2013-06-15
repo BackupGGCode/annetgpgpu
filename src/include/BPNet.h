@@ -149,6 +149,7 @@ public:
 	 * @return Return the learning rate of the net.
 	 */
 	float GetLearningRate() const;
+	
 	/**
 	 * Sets momentum scalar of the network.
 	 * @param fVal New value of the momentum. Recommended: 0.3f - 0.9f
@@ -158,6 +159,7 @@ public:
 	 * @return Returns the momentum scalar of the net.
 	 */
 	float GetMomentum() const;
+	
 	/**
 	 * Sets weight decay of the network.
 	 * @param fVal New value of the weight decay. Recommended: 0.f

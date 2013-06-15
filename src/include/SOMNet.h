@@ -33,7 +33,7 @@ class DistFunction;
  */
 class SOMNet : public AbsNet {
 protected:
-	const DistFunction 	*m_DistFunction;
+	DistFunction 	*m_DistFunction;
 	SOMNeuron 		*m_pBMNeuron;
 
 	unsigned int 	m_iCycle;	// current cycle step in learning progress
@@ -192,24 +192,30 @@ public:
 	float GetLearningRate() const;
 
 	/**
-	 * @brief Sets the distance (neighborhood) function of the network.
+	 * @brief Sets the neighborhood and decay function of the network together.
 	 * @param pFCN Kind of function the net has to use while back-/propagating.
 	 */
 	void SetDistFunction (const DistFunction *pFCN);
 
 	/**
+	 * @brief Sets the neighborhood and decay function of the network together.
+	 * @param pFCN Kind of function the net has to use while back-/propagating.
+	 */
+	void SetDistFunction (const DistFunction &FCN);
+	
+	/**
 	 * @brief Returns the currently used distance (neighborhood) function of the network.
 	 * @return Return the kind of function the net has to use while back-/propagating.
 	 */
-	const DistFunction *GetDistFunction() const;
-	
+	const DistFunction* GetDistFunction() const;
+
 	/**
 	 * @brief Sets the scalar for the conscience mechanism. If it is zero, then conscience is not applied.
 	 * A value of zero leads to the standard kohonen implementation.
 	 * Value must be: 0.f < fVal < 1.f
 	 */
 	void SetConscienceRate(const float &fVal);
-	
+
 	/**
 	 * @brief Returns the conscience scalar of the network. If it is zero, then conscience is not applied.
 	 * @return Returns the rate for the application of the conscience mechanism. 

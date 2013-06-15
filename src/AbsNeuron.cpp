@@ -196,9 +196,8 @@ AbsLayer *AbsNeuron::GetParent() const {
 }
 
 void AbsNeuron::SetTransfFunction (const TransfFunction *pFCN) {
-	this->m_ActFunction = pFCN;
+	this->m_ActFunction = const_cast<TransfFunction *>(pFCN);
 }
-
 
 const TransfFunction *AbsNeuron::GetTransfFunction() const {
 	return (m_ActFunction);

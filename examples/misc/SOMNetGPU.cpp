@@ -53,5 +53,6 @@ int main(int argc, char *argv[]) {
 		w.SetField(QPoint(pNeur->GetPosition()[0], pNeur->GetPosition()[1]), vCol );
 	}
 	w.Save("ColorsByGPU.png");
+
 	return 0;
 }

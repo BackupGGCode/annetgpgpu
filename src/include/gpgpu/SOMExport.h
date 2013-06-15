@@ -12,12 +12,33 @@ namespace ANNGPGPU {
 class BMUExport {
 public:
 // VARIABLES
+	float fDistance;
 	int iBMUID;
 	int iDeviceID;
 	thrust::host_vector<float> dvBMUPos;
 //FUNCTIONS
 	BMUExport();
 	BMUExport(int iUID, int iDID, const thrust::host_vector<float> &vPos);
+	BMUExport(float fDist, int iUID, int iDID);
+	
+	bool operator<(const BMUExport &rhs) const {
+		return fDistance < rhs.fDistance;
+	}
+	bool operator>(const BMUExport &rhs) const {
+		return fDistance > rhs.fDistance;
+	}
+	bool operator<=(const BMUExport &rhs) const {
+		return fDistance <= rhs.fDistance;
+	}
+	bool operator>=(const BMUExport &rhs) const {
+		return fDistance >= rhs.fDistance;
+	}
+	bool operator==(const BMUExport &rhs) const {
+		return fDistance == rhs.fDistance;
+	}
+	bool operator!=(const BMUExport &rhs) const {
+		return fDistance != rhs.fDistance;
+	}
 };
 
 class SplittedNetExport {

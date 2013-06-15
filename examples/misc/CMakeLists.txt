@@ -55,6 +55,9 @@ if (QT4_FOUND)
   add_executable (SOMNetCPU SOMNetCPU.cpp)
   target_link_libraries (SOMNetCPU ANNet SOMReader) 
     
+  add_executable (SimpFnExt SimpFnExt.cpp)
+  target_link_libraries (SimpFnExt ANNet SOMReader) 
+
   add_executable (SOMNetClustering SOMNetClustering.cpp)
   target_link_libraries (SOMNetClustering ANNet SOMReader)  
 endif(QT4_FOUND)

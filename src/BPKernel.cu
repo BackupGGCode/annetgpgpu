@@ -32,7 +32,7 @@ SwitchTransfFunc(std::vector<thrust::device_vector<float> > &vNeuronValues,
 				dvLayer.end(),
 				dvBias.begin(),
 				dvLayer.begin(),
-	    		ANN::logTransferFcn() );
+				ANN::logTransferFcn() );
 		// Now the input of the next layer will be the the previous one
 		dvInput = dvLayer;
 		vNeuronValues.push_back(dvLayer);
@@ -158,7 +158,7 @@ hostBPPropagateFW(const std::vector<ANNGPGPU::F2DArray> &vEdgeMatrices,
 				dvBias.end(),
 				dvLayer.begin(),
 				dvLayer.begin(),
-				saxpy_functor(1) );
+				sAXpY_functor(1) );
 		}
 
 		// Calculate the result of the current layer
@@ -168,7 +168,7 @@ hostBPPropagateFW(const std::vector<ANNGPGPU::F2DArray> &vEdgeMatrices,
 				vEdgeMatrices.at(i).GetRowEnd(y),
 				dvLayer.begin(),
 				dvLayer.begin(),
-				saxpy_functor(dvInput[y]) );
+				sAXpY_functor(dvInput[y]) );
 		}
 
 		SwitchTransfFunc( vNeuronValues, dvLayer, dvBias, dvInput, function );
@@ -196,7 +196,7 @@ AdadtEdges(std::vector<ANNGPGPU::F2DArray> &vEdgeMatricesI,
 				vErrors.at(i+1).end(),
 				vEdgeMatricesI.at(i).GetRowBegin(y),
 				vEdgeMatricesI.at(i).GetRowBegin(y),
-				saxpy_functor(fLearningRate*vNeuronValues.at(i)[y]) );
+				sAXpY_functor(fLearningRate*vNeuronValues.at(i)[y]) );
 		}
 		return;
 	}
@@ -215,14 +215,14 @@ AdadtEdges(std::vector<ANNGPGPU::F2DArray> &vEdgeMatricesI,
 		thrust::transform( vErrors.at(i+1).begin(),
 			vErrors.at(i+1).end(),
 			dvMomentums.begin(),
-			sax_functor(fLearningRate*vNeuronValues.at(i)[y]) );
+			sAX_functor(fLearningRate*vNeuronValues.at(i)[y]) );
 		// weight decay
 		if(fWeightDecay > 0.f) {
 			thrust::transform( vEdgeMatricesI.at(i).GetRowBegin(y),
 				vEdgeMatricesI.at(i).GetRowEnd(y),
 				dvMomentums.begin(),
 				dvMomentums.begin(),
-				saxpy_functor(-fWeightDecay) );
+				sAXpY_functor(-fWeightDecay) );
 		}
 		// momentum term
 		if(vMomentums.at(y).size() && fMomentum > 0.f) {
@@ -230,7 +230,7 @@ AdadtEdges(std::vector<ANNGPGPU::F2DArray> &vEdgeMatricesI,
 				vMomentums.at(i).GetRowEnd(y),
 				dvMomentums.begin(),
 				dvMomentums.begin(),
-				saxpy_functor(fMomentum) );
+				sAXpY_functor(fMomentum) );
 
 			thrust::copy(dvMomentums.begin(), dvMomentums.end(), matMomentums.GetRowBegin(y) );
 		}

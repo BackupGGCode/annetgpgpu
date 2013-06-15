@@ -33,18 +33,18 @@
 /*
  * BP kernels
  */
+//////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<float>
-hostBPCalcDelta(const thrust::device_vector<float> &vNeurOut,
+hostBPCalcDelta( const thrust::device_vector<float> &vNeurOut,
 		const std::vector<float> &vTrainOut );
-
-std::vector<thrust::device_vector<float> >
-hostBPPropagateFW(const std::vector<ANNGPGPU::F2DArray> &vEdgeMatrices,
+//////////////////////////////////////////////////////////////////////////////////////////////
+std::vector<thrust::device_vector<float> > 
+hostBPPropagateFW( const std::vector<ANNGPGPU::F2DArray> &vEdgeMatrices,
 		const std::vector<ANNGPGPU::F2DArray> &vBiasEdgeMatrices,
 		const std::vector<float> &vInput,
 		const ANN::TransfFunction &function);
 
-void
-hostBPPropagateBW(std::vector<ANNGPGPU::F2DArray> &dvEdgeMatricesI,
+void hostBPPropagateBW( std::vector<ANNGPGPU::F2DArray> &dvEdgeMatricesI,
 		std::vector<ANNGPGPU::F2DArray> &dvMomentums,
 		std::vector<thrust::device_vector<float> > &vErrorDeltas,
 		const std::vector<thrust::device_vector<float> > &vNeuronValues,
@@ -57,31 +57,25 @@ hostBPPropagateBW(std::vector<ANNGPGPU::F2DArray> &dvEdgeMatricesI,
  * SOM kernels
  */
 //////////////////////////////////////////////////////////////////////////////////////////////
-float hostGetMax(const thrust::device_vector<float>& vec, unsigned int &ID);
-float hostGetMin(const thrust::device_vector<float>& vec, unsigned int &ID);
-
+ANNGPGPU::BMUExport hostGetMin(std::vector<ANNGPGPU::BMUExport> &vec);
+std::pair<float, unsigned int> devGetMin(const thrust::device_vector<float> &vec);
 //////////////////////////////////////////////////////////////////////////////////////////////
 ANNGPGPU::BMUExport
-hostSOMFindBMNeuronID(std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
-		const float &fConscienceRate);
-
+hostSOMFindBMNeuronID(std::vector<ANNGPGPU::SplittedNetExport*> &SExp, const float &fConscienceRate);
 //////////////////////////////////////////////////////////////////////////////////////////////
 template<typename BinaryFunction>
-void
-hostSOMPropagateBW(std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
+void hostSOMPropagateBW( std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
 		const ANNGPGPU::BMUExport &,
 		const float &fSigmaT,
 		const float &fLearningRate,
 		const BinaryFunction &binaryDistFunc  );
 
-void
-hostSOMTraining( std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
+void hostSOMTraining( std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
 		const ANN::TrainingSet &InputSet,
 		const unsigned int &iCycles,
 		const float &fSigma0,
 		const float &fLearningRate0,
 		const float &fConscienceRate,
-		float (*pfnDecay)(const float &, const float &, const float &),
 		const ANN::DistFunction &pDistFunc );
 
 #endif /* ANKERNELS_H_ */

@@ -37,7 +37,7 @@ std::vector<SplittedNetExport*> SOMNetGPU::SplitDeviceData() const {
 	unsigned int iStart 		= 0;
 	unsigned int iStop 		= 0;
 	unsigned int iSizeOfLayer 	= GetOPLayer()->GetNeurons().size();
-	unsigned int iDeviceCount 	= 1;//GetCudaDeviceCount();
+	unsigned int iDeviceCount 	= GetCudaDeviceCount();
 	// To make things easy ..
 	if(iSizeOfLayer%iDeviceCount != 0) {
 		iDeviceCount = 1;
@@ -47,7 +47,7 @@ std::vector<SplittedNetExport*> SOMNetGPU::SplitDeviceData() const {
 	printf("Computing with %d GPUs ..\n", iDeviceCount);
 	for(int i = 0; i < iDeviceCount; i++) { 
 		checkCudaErrors(cudaSetDevice(i) );
-
+	  
 		iStart = i*(iSizeOfLayer/iDeviceCount);
 		iStop = (i+1)*(iSizeOfLayer/iDeviceCount)-1;
 
@@ -72,7 +72,7 @@ void SOMNetGPU::CombineDeviceData(std::vector<SplittedNetExport*> &SExp) {
 	unsigned int iStart 		= 0;
 	unsigned int iStop 		= 0;
 	unsigned int iSizeOfLayer 	= GetOPLayer()->GetNeurons().size();
-	unsigned int iDeviceCount 	= 1;//GetCudaDeviceCount();
+	unsigned int iDeviceCount 	= GetCudaDeviceCount();
 	// To make things easy ..
 	if(iSizeOfLayer%iDeviceCount != 0) {
 		iDeviceCount = 1;
@@ -167,7 +167,6 @@ void SOMNetGPU::Training(const unsigned int &iCycles) {
 		m_fSigma0,
 		m_fLearningRate,
 		m_fConscienceRate,
-		&ANN::fcn_decay,
 		*GetDistFunction() );
 	
 	printf("GPU Processing time: %f (ms)\n", GetTimer() );

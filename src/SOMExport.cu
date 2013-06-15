@@ -4,12 +4,20 @@ using namespace ANNGPGPU;
 
  
 BMUExport::BMUExport() {
+	fDistance 		= 0.f;
 	iBMUID 			= -1;
 	iDeviceID 		= -1;
 	dvBMUPos 		= thrust::host_vector<float>(0);
 }
 
+BMUExport::BMUExport(float fDist, int iUID, int iDID) {
+	fDistance 		= fDist;
+	iBMUID 			= iUID;
+	iDeviceID 		= iDID;
+}
+
 BMUExport::BMUExport(int iUID, int iDID, const thrust::host_vector<float> &vPos) {
+	fDistance 		= 0.f;
 	iBMUID 			= iUID;
 	iDeviceID 		= iDID;
 	dvBMUPos 		= vPos;

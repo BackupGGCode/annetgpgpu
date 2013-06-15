@@ -16,6 +16,16 @@
 #include <iostream>
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef __CUDACC__
+	__host__ __device__
+#endif
+inline static float
+fcn_nearest_nhood (const float& sigma0, const float& T, const float& lambda) {
+	return sqrt(2.f);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char *argv[]) {
 	QApplication a(argc, argv);
 
@@ -38,7 +48,13 @@ int main(int argc, char *argv[]) {
 	ANN::SOMNet cpu;
 	cpu.CreateSOM(3, 1, w1,w1);
 	cpu.SetTrainingSet(input);
-	cpu.Training(500);
+	cpu.SetConscienceRate(0.1);
+	
+	ANN::DistFunction distFn = ANN::Functions::fcn_gaussian;
+	distFn.rad_decay = fcn_nearest_nhood;
+	cpu.SetDistFunction(distFn);
+
+	cpu.Training(1000);
 
 	SOMReader w(w1, w1, w2);
 	for(int x = 0; x < w1*w1; x++) {
@@ -49,6 +65,6 @@ int main(int argc, char *argv[]) {
 
 		w.SetField(QPoint(pNeur->GetPosition()[0], pNeur->GetPosition()[1]), vCol );
 	}
-	w.Save("ColorsByCPU.png");
+	w.Save("SimpFnExtByCPU.png");
 	return 0;
 }

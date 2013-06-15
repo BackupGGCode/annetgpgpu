@@ -60,7 +60,7 @@ protected:
 	std::vector<Edge*> m_lOutgoingConnections;
 	std::vector<Edge*> m_lIncomingConnections;
 
-	const TransfFunction *m_ActFunction;
+	TransfFunction *m_ActFunction;
 
 public:
 	/**

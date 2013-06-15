@@ -6,29 +6,25 @@ using namespace ANN;
 /*
  * BP
  */
-const TransfFunction
-Functions::fcn_tanh = {
+TransfFunction Functions::fcn_tanh = {
 	(char*)"tanh",
 	fcn_tanh_normal,
 	fcn_tanh_derivate
 };
 
-const TransfFunction
-Functions::fcn_log = {
+TransfFunction Functions::fcn_log = {
 	(char*)"log",
 	fcn_log_normal,
 	fcn_log_derivate
 };
 
-const TransfFunction
-Functions::fcn_linear = {
+TransfFunction Functions::fcn_linear = {
 	(char*)"linear",
 	fcn_linear_normal,
 	fcn_linear_derivate
 };
 
-const TransfFunction
-Functions::fcn_binary = {
+TransfFunction Functions::fcn_binary = {
 	(char*)"binary",
 	fcn_binary_normal,
 	fcn_binary_derivate
@@ -37,43 +33,42 @@ Functions::fcn_binary = {
 /*
  * SOM
  */
-const DistFunction
-Functions::fcn_bubble = {
+DistFunction Functions::fcn_bubble = {
 	(char*)"bubble",
-	fcn_bubble_neighborhood,
-	fcn_decay
+	fcn_bubble_nhood,
+	fcn_rad_decay,
+	fcn_lrate_decay
 };
 
-const DistFunction
-Functions::fcn_gaussian = {
+DistFunction Functions::fcn_gaussian = {
 	(char*)"gaussian",
-	fcn_gaussian_bell,
-	fcn_decay
+	fcn_gaussian_nhood,
+	fcn_rad_decay,
+	fcn_lrate_decay
 };
 
-const DistFunction
-Functions::fcn_cut_gaussian = {
-	(char*)"cut_gaussian",
-	fcn_cut_gaussian_bell,
-	fcn_decay
+DistFunction Functions::fcn_cutgaussian = {
+	(char*)"cutgaussian",
+	fcn_cutgaussian_nhood,
+	fcn_rad_decay,
+	fcn_lrate_decay
 };
 
-const DistFunction
-Functions::fcn_epanechicov = {
+DistFunction Functions::fcn_epanechicov = {
 	(char*)"epanechicov",
-	fcn_epanechicov_neighborhood,
-	fcn_decay
+	fcn_epanechicov_nhood,
+	fcn_rad_decay,
+	fcn_lrate_decay
 };
 
-const DistFunction
-Functions::fcn_mexican = {
+DistFunction Functions::fcn_mexican = {
 	(char*)"mexican",
-	fcn_mexican_hat,
-	fcn_decay
+	fcn_mexican_nhood,
+	fcn_rad_decay,
+	fcn_lrate_decay
 };
 
-const TransfFunction*
-Functions::ResolveTransfFByName (const char *name) {
+TransfFunction* Functions::ResolveTransfFByName (const char *name) {
 	if (strcmp (name, "tanh") == 0) {
 		//std::cout<<"fcn_tanh"<<std::endl;
 		return (&fcn_tanh);
@@ -94,8 +89,7 @@ Functions::ResolveTransfFByName (const char *name) {
 	return (NULL);
 }
 
-const DistFunction*
-Functions::ResolveDistFByName (const char *name) {
+DistFunction* Functions::ResolveDistFByName (const char *name) {
 	if (strcmp (name, "gaussian") == 0) {
 		//std::cout<<"fcn_gaussian"<<std::endl;
 		return (&fcn_gaussian);
@@ -108,9 +102,9 @@ Functions::ResolveDistFByName (const char *name) {
 		//std::cout<<"fcn_mexican"<<std::endl;
 		return (&fcn_bubble);
 	}
-	if (strcmp (name, "cut_gaussian") == 0) {
+	if (strcmp (name, "cutgaussian") == 0) {
 		//std::cout<<"fcn_mexican"<<std::endl;
-		return (&fcn_cut_gaussian);
+		return (&fcn_cutgaussian);
 	}
 	if (strcmp (name, "epanechicov") == 0) {
 		//std::cout<<"fcn_mexican"<<std::endl;

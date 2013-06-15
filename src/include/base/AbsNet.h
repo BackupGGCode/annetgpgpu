@@ -64,7 +64,7 @@ protected:
 	float m_fLearningRate;				// global learning rate
 	float m_fMomentum;
 	float m_fWeightDecay;
-	const TransfFunction *m_pTransfFunction;
+	TransfFunction *m_pTransfFunction;
 
 	/* list of all layers in this net; last should be output layer, first input layer */
 
@@ -238,6 +238,13 @@ public:
 	 * @param pFunction New "activation" function
 	 */
 	virtual void SetTransfFunction(const TransfFunction *pFunction);
+
+	/**
+	 * @brief Defines the type of "activation" function the net has to use for back-/propagation.
+	 * @param pFunction New "activation" function
+	 */
+	virtual void SetTransfFunction(const TransfFunction &pFunction);
+
 	/**
 	 * @brief Access of the currently used transfer function of the network.
 	 * @return Returns the current net (activation) function.
