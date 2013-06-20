@@ -21,6 +21,12 @@
 using namespace ANN;
 using namespace ANNGPGPU;
 
+ANN::DistFunction ownFn = {
+	(char*)"own",
+	NULL,
+	fcn_rad_decay,
+	fcn_lrate_decay
+};
 
 int main(int argc, char *argv[]) {
 	QApplication a(argc, argv);
@@ -45,7 +51,9 @@ int main(int argc, char *argv[]) {
 	gpu.CreateSOM(3, 1, w1,w1);
 	gpu.SetTrainingSet(input);
 	
-	SetFcn(gpu.GetDistFunction() );
+	SetFcn(&ownFn);
+	gpu.SetDistFunction(ownFn);
+	// or just: SetFcn(gpu.GetDistFunction() );
 
 	gpu.Training(1000);
 
