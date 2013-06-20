@@ -69,7 +69,6 @@ SET( ANSourceFiles
 SET( ANCUDASourceFiles
   ${ANNetGPGPU_SOURCE_DIR}/2DArray.cu
   ${ANNetGPGPU_SOURCE_DIR}/SOMNetGPU.cpp
-  ${ANNetGPGPU_SOURCE_DIR}/SOMNetGPU.cu
   ${ANNetGPGPU_SOURCE_DIR}/SOMKernel.cu
   ${ANNetGPGPU_SOURCE_DIR}/SOMExport.cu
   ${ANNetGPGPU_SOURCE_DIR}/BPNetGPU.cpp
@@ -85,9 +84,9 @@ if (CUDA_FOUND)
     cuda_add_executable (SOMNetGPU SOMNetGPU.cpp)
     target_link_libraries (SOMNetGPU ANNet SOMReader) 
     
-#     CUDA_ADD_LIBRARY (foo STATIC SetFcn.cu ${ANCUDASourceFiles} ${ANSourceFiles} ${BZIP_INCLUDE_DIRS})
-#     cuda_add_executable (SimpFnExtGPU SimpFnExtGPU.cpp)
-#     target_link_libraries (SimpFnExtGPU foo SOMReader ${BZIP2_LIBRARIES} -lgomp) 
+    CUDA_ADD_LIBRARY (foo STATIC SetFcn.cu ${ANCUDASourceFiles} ${ANSourceFiles} ${BZIP_INCLUDE_DIRS})
+    cuda_add_executable (SimpFnExtGPU SimpFnExtGPU.cpp)
+    target_link_libraries (SimpFnExtGPU foo SOMReader ${BZIP2_LIBRARIES} -lgomp) 
   endif (QT4_FOUND)
   
   cuda_add_executable (BPNetGPU BPNetGPU.cpp)
