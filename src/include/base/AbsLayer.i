@@ -4,4 +4,4 @@
 
 %ignore ANN::SetEdgesToValue;
 
-%include "AbsLayer.h" 
+%include "base/AbsLayer.h" 

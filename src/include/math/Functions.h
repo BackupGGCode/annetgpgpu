@@ -22,6 +22,7 @@
 
 #define PI    3.14159265358979323846f 
 
+
 namespace ANN {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +39,7 @@ namespace ANN {
 	__host__ __device__
 #endif
 inline static float
-fcn_tanh_normal (const float& in, const float& theta) {
+fcn_tanh_normal (float in, float theta) {
 	return (tanh (in - theta));
 }
 
@@ -46,7 +47,7 @@ fcn_tanh_normal (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_tanh_derivate (const float& in, const float& theta) {
+fcn_tanh_derivate (float in, float theta) {
 	return (1.f - pow (tanh (in - theta), 2.f));
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +55,7 @@ fcn_tanh_derivate (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_log_normal (const float& in, const float& theta) {
+fcn_log_normal (float in, float theta) {
 	return (1.f / (1.f + exp (theta - in)));
 }
 
@@ -62,7 +63,7 @@ fcn_log_normal (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_log_derivate (const float& in, const float& theta) {
+fcn_log_derivate (float in, float theta) {
 	float e_val;
 	e_val = exp (theta - in);
 	return (e_val / pow (e_val + 1.f, 2.f));
@@ -72,7 +73,7 @@ fcn_log_derivate (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_linear_normal (const float& in, const float& theta) {
+fcn_linear_normal (float in, float theta) {
 	return (in - theta);
 }
 
@@ -80,7 +81,7 @@ fcn_linear_normal (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_linear_derivate (const float& in, const float& theta) {
+fcn_linear_derivate (float in, float theta) {
 	return (1.f);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +89,7 @@ fcn_linear_derivate (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_binary_normal (const float& in, const float& theta) {
+fcn_binary_normal (float in, float theta) {
 	if (in >= theta) {
 		return (1.f);
 	}
@@ -99,7 +100,7 @@ fcn_binary_normal (const float& in, const float& theta) {
 	__host__ __device__
 #endif
 inline static float
-fcn_binary_derivate (const float& in, const float& theta) {
+fcn_binary_derivate (float in, float theta) {
 	return (1.f);
 }
 
@@ -107,14 +108,14 @@ fcn_binary_derivate (const float& in, const float& theta) {
 #ifdef __CUDACC__
 struct tanTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal, const float& fBias) const {
+	float operator()(float fVal, float fBias) {
 		return ANN::fcn_tanh_normal(fVal, fBias);
 	}
 };
 
 struct devTanTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal) const {
+	float operator()(float fVal) {
 		return ANN::fcn_tanh_derivate(fVal, 0);
 	}
 };
@@ -122,14 +123,14 @@ struct devTanTransferFcn {
 //////////////////////////////////////////////////////////////////////////////////////////////
 struct binTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal, const float& fBias) const {
+	float operator()(float fVal, float fBias) {
 		return ANN::fcn_binary_normal(fVal, fBias);
 	}
 };
 
 struct devBinTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal) const {
+	float operator()(float fVal) {
 		return ANN::fcn_binary_derivate(fVal, 0);
 	}
 };
@@ -137,14 +138,14 @@ struct devBinTransferFcn {
 //////////////////////////////////////////////////////////////////////////////////////////////
 struct linTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal, const float& fBias) const {
+	float operator()(float fVal, float fBias) {
 		return ANN::fcn_linear_normal(fVal, fBias);
 	}
 };
 
 struct devLinTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal) const {
+	float operator()(float fVal) {
 		return ANN::fcn_linear_derivate(fVal, 0);
 	}
 };
@@ -152,14 +153,14 @@ struct devLinTransferFcn {
 //////////////////////////////////////////////////////////////////////////////////////////////
 struct logTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal, const float& fBias) const {
+	float operator()(float fVal, float fBias) {
 		return ANN::fcn_log_normal(fVal, fBias);
 	}
 };
 
 struct devLogTransferFcn {
 	__host__ __device__
-	float operator()(const float& fVal) const {
+	float operator()(float fVal) {
 		return ANN::fcn_log_derivate(fVal, 0);
 	}
 };
@@ -174,7 +175,7 @@ struct devLogTransferFcn {
 	__host__ __device__
 #endif
 inline static float
-fcn_bubble_nhood (const float& dist, const float& sigmaT) {
+fcn_bubble_nhood (float dist, float sigmaT) {
 	if(dist < sigmaT)
 		return 1.f;
 	else return 0.f;
@@ -185,7 +186,7 @@ fcn_bubble_nhood (const float& dist, const float& sigmaT) {
 	__host__ __device__
 #endif
 inline static float
-fcn_gaussian_nhood (const float& dist, const float& sigmaT) {
+fcn_gaussian_nhood (float dist, float sigmaT) {
 	return exp(-pow(dist, 2.f)/(2.f*pow(sigmaT, 2.f)));
 }
 
@@ -194,7 +195,7 @@ fcn_gaussian_nhood (const float& dist, const float& sigmaT) {
 	__host__ __device__
 #endif
 inline static float
-fcn_cutgaussian_nhood (const float& dist, const float& sigmaT) {
+fcn_cutgaussian_nhood (float dist, float sigmaT) {
 	if(dist < sigmaT)
 		return exp(-pow(dist, 2.f)/(2.f*pow(sigmaT, 2.f)));
 	else return 0.f;
@@ -205,7 +206,7 @@ fcn_cutgaussian_nhood (const float& dist, const float& sigmaT) {
 	__host__ __device__
 #endif
 inline static float
-fcn_mexican_nhood (const float& dist, const float& sigmaT) {
+fcn_mexican_nhood (float dist, float sigmaT) {
 	return 	2.f/(sqrt(3.f * sigmaT) * pow(PI, 0.25f) ) * 
 		(1.f-pow(dist, 2.f) / pow(sigmaT, 2.f) ) * 
 		fcn_gaussian_nhood(dist, sigmaT);
@@ -216,7 +217,7 @@ fcn_mexican_nhood (const float& dist, const float& sigmaT) {
 	__host__ __device__
 #endif
 inline static float
-fcn_epanechicov_nhood (const float& dist, const float& sigmaT) {
+fcn_epanechicov_nhood (float dist, float sigmaT) {
 	float fVal = 1 - pow(dist/sigmaT, 2.f);
 	if(fVal > 0)
 		return fVal;
@@ -228,7 +229,7 @@ fcn_epanechicov_nhood (const float& dist, const float& sigmaT) {
 	__host__ __device__
 #endif
 inline static float
-fcn_rad_decay (const float& sigma0, const float& T, const float& lambda) {
+fcn_rad_decay (float sigma0, float T, float lambda) {
 	return std::floor(sigma0*exp(-T/lambda) + 0.5f);
 }
 
@@ -237,7 +238,7 @@ fcn_rad_decay (const float& sigma0, const float& T, const float& lambda) {
 	__host__ __device__
 #endif
 inline static float
-fcn_lrate_decay (const float& sigma0, const float& T, const float& lambda) {
+fcn_lrate_decay (float sigma0, float T, float lambda) {
 	return sigma0*exp(-T/lambda);
 }
 
@@ -251,20 +252,20 @@ public:
 	/** 
 	 * @brief The symbolic name of the function. 
 	 */
-	char * name;
+	char *name;
 
 	/** 
 	 * @brief Transfer function for backpropagation networks.
 	 * The first parameter gives the x-value,
 	 * the second one is the theta value, taken from the neuron.
 	 */
-	float (* normal)(const float&, const float&);
+	float (* normal)(float, float);
 
 	/** 
 	 * @brief The derivative of the transfre function for backpropagation networks.
 	 * Used for the backpropagation algorithm.
 	 */
-	float (* derivate)(const float&, const float&);
+	float (* derivate)(float, float);
 };
 
 /** 
@@ -279,14 +280,14 @@ public:
 	 * @brief The symbolic name of the function.
 	 * Determined normally by the name of the used neighborhood function.
 	 */
-	char * name;
+	char *name;
 
 	/** 
 	 * @brief The distance (or neighborhood) function for SOMs
 	 * Used for the determination of the excitation of a neuron.
 	 */
-	float (* distance)(const float&, const float&);
-
+	float (* distance)(float, float);
+	
 	/**  
 	 * @brief The decay function for SOMs
 	 * Calculates the decay after each epoch.\n
@@ -298,7 +299,7 @@ public:
 	 * \\ \mbox{t is the current time-step (iteration of the loop). }
 	 * \f$
 	 */
-	float (* rad_decay)(const float& sigma, const float& t, const float& lambda);
+	float (* rad_decay)(float sigma, float t, float lambda);
 	
 	/**  
 	 * @brief The decay function for SOMs
@@ -311,7 +312,7 @@ public:
 	 * \\ \mbox{t is the current time-step (iteration of the loop). }
 	 * \f$
 	 */
-	float (* lrate_decay)(const float& sigma, const float& t, const float& lambda);
+	float (* lrate_decay)(float sigma, float t, float lambda);
 };
 
 /** 
@@ -354,16 +355,16 @@ public:
 
 	 /**
 	  * @brief A binary activation function.
-	  * \f$f_{act} (x, \Theta) = \left\{\begin{array}{cl}1.0 & x \geq
-	  * \Theta\\-1.0 & x < \Theta\end{array}\right.\f$
+	  * \f$f_{act} (x, \Theta) = \left\{\begin{array}{cl}1.0  x \geq
+	  * \Theta\\-1.0  x < \Theta\end{array}\right.\f$
 	  */
 	static TransfFunction fcn_binary;
 
 	/**
 	 * @brief A binary neighborhood function.
 	 * \f$
-	 * \\ f_{act} (dist, \sigma(t)) = \left\{\begin{array}{cl}1.0 & dist < \sigma(t)
-	 * \\0 & dist \geq \sigma(t)\end{array}\right.\f$
+	 * \\ f_{act} (dist, \sigma(t)) = \left\{\begin{array}{cl}1.0  dist < \sigma(t)
+	 * \\0  dist \geq \sigma(t)\end{array}\right.\f$
 	 */
 	static DistFunction fcn_bubble;
 	
@@ -383,8 +384,8 @@ public:
 	/**
 	 * @brief The cut gaussian neighborhood function.
 	 * \f$
-	 *  \\ {act} (dist, \sigma(t)) = \left\{\begin{array}{cl} {e^{-\frac{dist^2}{2\sigma(t)^2}}} & dist < \sigma(t)
-	 *  \\ 0 & dist \geq \sigma(t)\end{array}\right.
+	 *  \\ {act} (dist, \sigma(t)) = \left\{\begin{array}{cl} {e^{-\frac{dist^2}{2\sigma(t)^2}}}  dist < \sigma(t)
+	 *  \\ 0  dist \geq \sigma(t)\end{array}\right.
 	 *  \\ \sigma(t) = \sigma_0e^{-\frac{t}{\lambda}}
 	 *  \\
 	 *  \\ \mbox{The Greek letter sigma (} \sigma_0 \mbox{) denotes the width of the lattice at time t(0)}
@@ -397,8 +398,8 @@ public:
 	/**
 	 * @brief Epanechicov neighborhood function.
 	 * \f$
-	 *  \\ {act} (dist, \sigma(t)) = \left\{\begin{array}{cl} {1-{\frac{dist}{\sigma(t)}^2}} & {act} > 0
-	 *  \\ 0 & {act} \leq 0\end{array}\right.
+	 *  \\ {act} (dist, \sigma(t)) = \left\{\begin{array}{cl} {1-{\frac{dist}{\sigma(t)}^2}}  {act} > 0
+	 *  \\ 0  {act} \leq 0\end{array}\right.
 	 *  \\ \sigma(t) = \sigma_0e^{-\frac{t}{\lambda}}
 	 *  \\
 	 *  \\ \mbox{The Greek letter sigma (} \sigma_0 \mbox{) denotes the width of the lattice at time t(0)}

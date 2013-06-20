@@ -1,8 +1,8 @@
 %{
-#include "Centroid.h"
+#include "containers/Centroid.h"
 %}
 
-%include "Centroid.h"
+%include "containers/Centroid.h"
 
 
 %include <std_sstream.i>

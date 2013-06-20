@@ -1,5 +1,5 @@
 %{
-#include "2DArray.h"
+#include "containers/2DArray.h"
 %}
 
 %ignore ANN::F2DArray::operator [];
@@ -20,7 +20,7 @@
 	};
 %}
 
-%include "2DArray.h"  
+%include "containers/2DArray.h"  
 
 %extend ANN::F2DArray {
 	AN2DRow __getitem__(int y) {

@@ -21,25 +21,56 @@
 #include "2DArray.h"
 #endif
 
+
 namespace ANNGPGPU {
 
 class SOMNetGPU : public ANN::SOMNet {
 private:
-	int GetCudaDeviceCount() const;
-	
 	std::vector<SplittedNetExport*> SplitDeviceData() const;
 	void CombineDeviceData(std::vector<SplittedNetExport*> &SExp);
 
+	/**
+	 * Returns the number of cuda capable devices as integer.
+	 * @return Number of cuda capable devices
+	 */
+	int GetCudaDeviceCount() const;
+	
+	/**
+	 * Assigns a function pointer for the distance function: "GetDistFunction()->distance"
+	 * This assignment is (due to CUDA related restrictions) only working, if a preimplemented distance function is used.
+	 * The assignment is just for the distance, not the decay function. 
+	 * Overloading of the distance function could be done at compile time manually. 
+	 * Preimplemented functions: fcn_bubble_nhood, fcn_gaussian_nhood, fcn_cutgaussian_nhood, fcn_mexican_nhood, fcn_epanechicov_nhood.
+	 */
+	bool AssignDistanceFunction();
+	
+	/**
+	 * Free device memory after assignment.
+	 */
+	bool DeassignDistanceFunction();
+	
 public:
 	SOMNetGPU();
 	SOMNetGPU(ANN::AbsNet *pNet);
 	virtual ~SOMNetGPU();
-
+	
 	/**
 	 * Trains the network with given input until iCycles is reached.
 	 * @param iCycles Maximum number of training cycles.
 	 */
 	virtual void Training(const unsigned int &iCycles = 1000);
+	
+	/**
+	 * @brief Sets the neighborhood and decay function of the network together.
+	 * @param pFCN Kind of function the net has to use while back-/propagating.
+	 */
+	void SetDistFunction (const ANN::DistFunction *pFCN);
+
+	/**
+	 * @brief Sets the neighborhood and decay function of the network together.
+	 * @param pFCN Kind of function the net has to use while back-/propagating.
+	 */
+	void SetDistFunction (const ANN::DistFunction &FCN);
 };
 
 }

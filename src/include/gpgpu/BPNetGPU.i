@@ -1,5 +1,5 @@
 %{
-#include "BPNetGPU.h"
+#include "gpgpu/BPNetGPU.h"
 %}
 
-%include "BPNetGPU.h" 
+%include "gpgpu/BPNetGPU.h" 

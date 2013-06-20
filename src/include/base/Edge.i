@@ -2,7 +2,7 @@
 #include "base/Edge.h"
 %}
 
-%include "Edge.h"
+%include "base/Edge.h"
 %include "std_sstream.i"
 
 namespace ANN {

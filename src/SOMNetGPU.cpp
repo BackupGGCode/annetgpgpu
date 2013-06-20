@@ -22,15 +22,26 @@ const int MAX_GPU_COUNT = 32;
 ////////////////////////////////////////////////////////////////////////////////
 
 int SOMNetGPU::GetCudaDeviceCount() const {
-	int GPU_N = 0;
-	printf("Check for CUDA-capable devices\n");
-	checkCudaErrors(cudaGetDeviceCount(&GPU_N) );
-	if (GPU_N > MAX_GPU_COUNT) {
-	    GPU_N = MAX_GPU_COUNT;
-	}
-	printf("CUDA-capable device count: %i\n", GPU_N);
+	int iGPU_N 	= 0; 	// device number
+	int iSM20_N 	= 0; 	// number of devices with SM >= 2.0 
 
-	return GPU_N;
+	printf("Check for CUDA-capable devices\n");
+	checkCudaErrors(cudaGetDeviceCount(&iGPU_N) );
+	if (iGPU_N > MAX_GPU_COUNT) {
+	    iGPU_N = MAX_GPU_COUNT;
+	}
+	printf("CUDA-capable device count: %i\n", iGPU_N);
+
+	for(int i = 0; i < iGPU_N; i++) {
+		cudaDeviceProp props;
+		checkCudaErrors(cudaGetDeviceProperties(&props, i) );
+		if(props.major >= 2) {
+			iSM20_N++;
+		}
+	}
+	printf("SM 2.0 capable device count: %i\n", iSM20_N);
+	
+	return iSM20_N;
 }
 
 std::vector<SplittedNetExport*> SOMNetGPU::SplitDeviceData() const {
@@ -122,6 +133,9 @@ SOMNetGPU::SOMNetGPU() {
 	SetDistFunction(&ANN::Functions::fcn_gaussian);
 
 	m_fTypeFlag 	= ANN::ANNetSOM;
+
+	// Set a function pointer to the currently used neighborhood function
+	AssignDistanceFunction();
 }
 
 SOMNetGPU::SOMNetGPU(AbsNet *pNet) {
@@ -141,6 +155,9 @@ SOMNetGPU::SOMNetGPU(AbsNet *pNet) {
 	SetTrainingSet(pNet->GetTrainingSet() );
 
 	m_fTypeFlag 	= ANN::ANNetSOM;
+	
+	// Set a function pointer to the currently used neighborhood function
+	AssignDistanceFunction();
 }
 
 SOMNetGPU::~SOMNetGPU() {
@@ -176,6 +193,18 @@ void SOMNetGPU::Training(const unsigned int &iCycles) {
 	// Copy data from device to host
 	CombineDeviceData(SExp);	
 	std::cout<<".. Finished"<<std::endl;
+}
+
+void SOMNetGPU::SetDistFunction (const ANN::DistFunction *pFCN) {
+	SOMNet::SetDistFunction(pFCN);
+	// Set a function pointer to the currently used neighborhood function
+	AssignDistanceFunction();
+}
+
+void SOMNetGPU::SetDistFunction (const ANN::DistFunction &pFCN) {
+	SOMNet::SetDistFunction(pFCN);
+	// Set a function pointer to the currently used neighborhood function
+	AssignDistanceFunction();
 }
 
 }

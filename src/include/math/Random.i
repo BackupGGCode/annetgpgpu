@@ -1,5 +1,5 @@
 %{
-#include "Random.h"
+#include "math/Random.h"
 %}
 
-%include "Random.h>    
+%include "math/Random.h>    

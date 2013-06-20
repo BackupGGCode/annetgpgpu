@@ -125,6 +125,10 @@ SOMNet::SOMNet(	const unsigned int &iWidthI, const unsigned int &iHeightI,
 	CreateSOM(iWidthI, iHeightI, iWidthO, iHeightO);
 }
 
+void SOMNet::AddLayer(AbsLayer *pLayer) {
+	AbsNet::AddLayer(pLayer);
+}
+
 void SOMNet::AddLayer(const unsigned int &iSize, const LayerTypeFlag &flType) {
 	AbsNet::AddLayer( new SOMLayer(iSize, flType) );
 }
@@ -482,7 +486,7 @@ void SOMNet::SetDistFunction (const DistFunction &pFCN) {
 	this->m_DistFunction = const_cast<DistFunction *>(&pFCN);
 }
 
-const DistFunction *SOMNet::GetDistFunction() const {
+DistFunction *SOMNet::GetDistFunction() {
 	return (m_DistFunction);
 }
 

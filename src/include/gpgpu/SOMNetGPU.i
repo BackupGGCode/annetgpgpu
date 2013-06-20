@@ -1,5 +1,7 @@
 %{
-#include "SOMNetGPU.h"
+#include "gpgpu/SOMNetGPU.h"
 %}
 
-%include "SOMNetGPU.h" 
+%ignore ANNGPGPU::SOMNetGPU::SetDistFunction(const ANN::DistFunction *);
+
+%include "gpgpu/SOMNetGPU.h" 

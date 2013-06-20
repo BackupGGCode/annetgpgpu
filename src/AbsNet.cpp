@@ -319,11 +319,11 @@ float AbsNet::SetOutput(float *outputArray, const unsigned int &size, const unsi
 	return fError;
 }
 
-void AbsNet::SetTrainingSet(TrainingSet *pData) {
+void AbsNet::SetTrainingSet(const TrainingSet *pData) {
 	assert(pData);
 
 	if( pData != NULL ) {
-		m_pTrainingData = pData;
+		m_pTrainingData = const_cast<TrainingSet *>(pData);
 	}
 }
 
@@ -403,7 +403,7 @@ void AbsNet::SetTransfFunction(const TransfFunction &pFunction) {
 	}
 }
 
-const TransfFunction *AbsNet::GetTransfFunction() const {
+TransfFunction *AbsNet::GetTransfFunction() {
 	return m_pTransfFunction;
 }
 

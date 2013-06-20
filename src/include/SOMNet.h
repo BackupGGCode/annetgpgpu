@@ -34,7 +34,7 @@ class DistFunction;
 class SOMNet : public AbsNet {
 protected:
 	DistFunction 	*m_DistFunction;
-	SOMNeuron 		*m_pBMNeuron;
+	SOMNeuron 	*m_pBMNeuron;
 
 	unsigned int 	m_iCycle;	// current cycle step in learning progress
 	unsigned int 	m_iCycles;	// maximum of cycles
@@ -85,7 +85,7 @@ protected:
 	 * @param iSize Number of neurons of the layer.
 	 * @param flType Flag describing the type of the net.
 	 */
-	void AddLayer(const unsigned int &iSize, const LayerTypeFlag &flType);
+	virtual void AddLayer(const unsigned int &iSize, const LayerTypeFlag &flType);
 
 public:
 	/**
@@ -115,6 +115,12 @@ public:
 		const unsigned int &iWidthO, const unsigned int &iHeightO);
 
 	virtual ~SOMNet();
+	
+	/**
+	 * @brief Adds a new layer to the network. New layer will get appended to m_lLayers.
+	 * @param pLayer Pointer to the new layer.
+	 */
+	virtual void AddLayer(AbsLayer *pLayer);
 
 	/**
 	 * @brief Creates the network based on a connection table.
@@ -207,7 +213,7 @@ public:
 	 * @brief Returns the currently used distance (neighborhood) function of the network.
 	 * @return Return the kind of function the net has to use while back-/propagating.
 	 */
-	const DistFunction* GetDistFunction() const;
+	DistFunction* GetDistFunction();
 
 	/**
 	 * @brief Sets the scalar for the conscience mechanism. If it is zero, then conscience is not applied.

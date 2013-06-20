@@ -1,25 +1,30 @@
 %{
-#include "2DArray.h"
+#include "gpgpu/2DArray.h"
 %}
 
-%include "2DArray.h"  
+%inline %{
+	struct AN2DRow {
+		ANNGPGPU::F2DArray *g;
+		int    y;
 
-namespace ANN {
-	%extend AN2DArray {
-		char *__str__() {
-			std::ostringstream ostrs;
-			char *c_str;
-			
-			for(unsigned int y = 0; y < $self->GetHeight(); y++) {
-				for(unsigned int x = 0; x < $self->GetWidth(); x++) {
-					float fVal = $self[y*$self->GetWidth()+x];
-					ostrs << fVal << std::endl;
-				}
-			}
-
-			c_str = new char[ostrs.str().length()+1];
-			strcpy(c_str, ostrs.str().c_str());
-			return c_str;
+		// These functions are used by Python to access sequence types (lists, tuples, ...)
+		float __getitem__(int x) {
+			return g->GetValue(x, y);
 		}
+
+		void __setitem__(int x, float val) {
+			g->SetValue(x, y, val);
+		}
+	};
+%}
+
+%include "gpgpu/2DArray.h"  
+
+%extend ANNGPGPU::F2DArray {
+	AN2DRow __getitem__(int y) {
+		AN2DRow r;
+		r.g = self;
+		r.y = y;
+		return r;
 	}
-}
+};

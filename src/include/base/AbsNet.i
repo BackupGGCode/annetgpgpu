@@ -2,6 +2,7 @@
 #include "base/AbsNet.h"
 %}
 
-%ignore ANN::AbsNet::SetTrainingSet(TrainingSet *);
+%ignore ANN::AbsNet::SetTrainingSet(const TrainingSet *);
+%ignore ANN::AbsNet::SetTransfFunction(const TransfFunction *);
 
-%include "AbsNet.h"  
+%include "base/AbsNet.h"  

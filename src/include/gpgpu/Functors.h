@@ -1,60 +1,62 @@
 #ifndef ANFUNCTORS_H_
 #define ANFUNCTORS_H_
 
+#ifndef SWIG
 #include "../math/Functions.h"
+#endif
 
 
 struct sAXpY_functor { // Y <- A * X + Y
-    const float a;
+    float a;
 
     sAXpY_functor(float _a) : a(_a) {}
 
     __host__ __device__
-	float operator()(const float& x, const float& y) const {
+	float operator()(float x, float y) {
 		return a * x + y;
 	}
 };
 
 struct sAX_functor { // Y <- A * X
-    const float a;
+    float a;
 
     sAX_functor(float _a) : a(_a) {}
 
     __host__ __device__
-	float operator()(const float& x) const {
+	float operator()(float x) {
 		return a * x;
 	}
 };
 
 struct sAXmY_functor { // Y <- A * (X - Y)
-	const float a;
+	float a;
 
 	sAXmY_functor(float _a) : a(_a) {}
 
 	__host__ __device__
-	float operator()(const float& x, const float& y) const { 
+	float operator()(float x, float y) { 
 		return a * (x - y);
 	}
 };
 
 struct sXmAmY_functor { // Y <- X - (A - Y)
-	const float a;
+	float a;
 
 	sXmAmY_functor(float _a) : a(_a) {}
 
 	__host__ __device__
-	float operator()(const float& x, const float& y) const { 
+	float operator()(float x, float y) { 
 		return x - (a - y);
 	}
 };
 
 struct spowAmXpY_functor { // Y <- (A-X)^2 + Y
-	const float a;
+	float a;
 
 	spowAmXpY_functor(float _a) : a(_a) {}
 
 	__host__ __device__
-	float operator()(const float& x, const float& y) const { 
+	float operator()(float x, float y) { 
 		return pow(a-x, 2) + y;
 	}
 };
@@ -62,50 +64,50 @@ struct spowAmXpY_functor { // Y <- (A-X)^2 + Y
 //////////////////////////////////////////////////////////////////////////////////////////////
 struct sm13bubble_functor {
 	float fSigmaT;
-	sm13bubble_functor(const float &sigmaT) : fSigmaT(sigmaT)	{}
+	sm13bubble_functor(float sigmaT) : fSigmaT(sigmaT)	{}
 
 	__host__ __device__
-	float operator()(const float& dist) const {
+	float operator()(float dist) {
 		return ANN::fcn_bubble_nhood(sqrt(dist), fSigmaT);
 	}
 };
 
 struct sm13gaussian_functor {
 	float fSigmaT;
-	sm13gaussian_functor(const float &sigmaT) : fSigmaT(sigmaT)	{}
+	sm13gaussian_functor(float sigmaT) : fSigmaT(sigmaT)	{}
 
 	__host__ __device__
-	float operator()(const float& dist) const {
+	float operator()(float dist) {
 		return ANN::fcn_gaussian_nhood(sqrt(dist), fSigmaT);
 	}
 };
 
 struct sm13cut_gaussian_functor {
 	float fSigmaT;
-	sm13cut_gaussian_functor(const float &sigmaT) : fSigmaT(sigmaT)	{}
+	sm13cut_gaussian_functor(float sigmaT) : fSigmaT(sigmaT)	{}
 
 	__host__ __device__
-	float operator()(const float& dist) const {
+	float operator()(float dist) {
 		return ANN::fcn_cutgaussian_nhood(sqrt(dist), fSigmaT);
 	}
 };
 
 struct sm13mexican_functor {
 	float fSigmaT;
-	sm13mexican_functor(const float &sigmaT) : fSigmaT(sigmaT)	{}
+	sm13mexican_functor(float sigmaT) : fSigmaT(sigmaT)	{}
 
 	__host__ __device__
-	float operator()(const float& dist) const {
+	float operator()(float dist) {
 		return ANN::fcn_mexican_nhood(sqrt(dist), fSigmaT);
 	}
 };
 
 struct sm13epanechicov_functor {
 	float fSigmaT;
-	sm13epanechicov_functor(const float &sigmaT) : fSigmaT(sigmaT)	{}
+	sm13epanechicov_functor(float sigmaT) : fSigmaT(sigmaT)	{}
 
 	__host__ __device__
-	float operator()(const float& dist) const {
+	float operator()(float dist) {
 		return ANN::fcn_epanechicov_nhood(sqrt(dist), fSigmaT);
 	}
 };
@@ -115,29 +117,27 @@ struct hebbian_functor {
 	float fLearningRate;
 	float fInput;
 
-	hebbian_functor(const float &learning_rate, const float &input) :
+	hebbian_functor(float learning_rate, float input) :
 		fLearningRate(learning_rate), fInput(input) {}
 
 	__host__ __device__
-	float operator()(const float& fWeight, const float& fInfluence) const {
+	float operator()(float fWeight, float fInfluence) {
 		return fWeight + (fInfluence*fLearningRate*(fInput-fWeight) );
 	}
 };
 //////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////
-#if __CUDA_ARCH__ >= 200
-typedef float (*external_device_func_t) (const float&, const float&);
+typedef float (*pDistanceFu) (float, float);
 struct sm20distance_functor {
 	float fSigmaT;
-	external_device_func_t* m_pfunc;
-	sm20distance_functor(const float &sigmaT, external_device_func_t* pfunc) : 
+	pDistanceFu m_pfunc;
+	sm20distance_functor(float sigmaT, pDistanceFu pfunc) : 
 		fSigmaT(sigmaT), m_pfunc(pfunc) {}
 
-    __host__ __device__
-	float operator()(const float& dist) const {
-		return (**m_pfunc)(sqrt(dist), fSigmaT);
+	__host__ __device__
+	float operator()(float dist) {
+		return (*m_pfunc)(sqrt(dist), fSigmaT);
 	}
 };
-#endif
 
 #endif

@@ -1,5 +1,5 @@
 %{
-#include "ConTable.h"
+#include "containers/ConTable.h"
 %}
 
-%include "ConTable.h"   
+%include "containers/ConTable.h"   

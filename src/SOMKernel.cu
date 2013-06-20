@@ -7,9 +7,12 @@
 #include "include/gpgpu/Functors.h"
 #include "include/gpgpu/helper_cuda.h"
 
+#include "include/gpgpu/SOMNetGPU.h"
+
 #include <cfloat>
 #include <cassert>
 #include <cmath>
+#include <algorithm>
 
 #include <omp.h>
 
@@ -19,6 +22,63 @@
 
 using namespace ANNGPGPU;
 
+
+typedef float (*pDistanceFu) (float, float);
+__device__ pDistanceFu pBubble 		= ANN::fcn_bubble_nhood; 
+__device__ pDistanceFu pGaussian 	= ANN::fcn_gaussian_nhood; 
+__device__ pDistanceFu pCutGauss 	= ANN::fcn_cutgaussian_nhood; 
+__device__ pDistanceFu pMexican 	= ANN::fcn_mexican_nhood; 
+__device__ pDistanceFu pEpanech 	= ANN::fcn_epanechicov_nhood;
+
+bool SOMNetGPU::AssignDistanceFunction() {
+	pDistanceFu hBubble; 
+	pDistanceFu hGaussian; 
+	pDistanceFu hCutGauss; 
+	pDistanceFu hMexican; 
+	pDistanceFu hEpanech;
+
+	cudaMemcpyFromSymbol(&hBubble, pBubble, sizeof(pDistanceFu) );
+	cudaMemcpyFromSymbol(&hGaussian, pGaussian, sizeof(pDistanceFu) );
+	cudaMemcpyFromSymbol(&hCutGauss, pCutGauss, sizeof(pDistanceFu) );
+	cudaMemcpyFromSymbol(&hMexican, pMexican, sizeof(pDistanceFu) );
+	cudaMemcpyFromSymbol(&hEpanech, pEpanech, sizeof(pDistanceFu) );
+
+	if (strcmp (GetDistFunction()->name, "gaussian") == 0) {
+		GetDistFunction()->distance = hGaussian;
+	} else if (strcmp (GetDistFunction()->name, "mexican") == 0) {
+		GetDistFunction()->distance = hMexican;
+	} else if (strcmp (GetDistFunction()->name, "bubble") == 0) {
+		GetDistFunction()->distance = hBubble;
+	} else if (strcmp (GetDistFunction()->name, "cutgaussian") == 0) {
+		GetDistFunction()->distance = hCutGauss;
+	} else if (strcmp (GetDistFunction()->name, "epanechicov") == 0) {
+		GetDistFunction()->distance = hEpanech;
+	} else {
+		printf("No preimplemented function recognized. No assignment done.");
+		return 0;
+	}
+	printf("Preimplemented function recognized. Assignment done.");
+	return 1;
+}
+
+bool SOMNetGPU::DeassignDistanceFunction() {
+	if (strcmp (GetDistFunction()->name, "gaussian") == 0) {
+		GetDistFunction()->distance = ANN::fcn_gaussian_nhood; 
+	} else if (strcmp (GetDistFunction()->name, "mexican") == 0) {
+		GetDistFunction()->distance = ANN::fcn_mexican_nhood; 
+	} else if (strcmp (GetDistFunction()->name, "bubble") == 0) {
+		GetDistFunction()->distance = ANN::fcn_bubble_nhood;
+	} else if (strcmp (GetDistFunction()->name, "cutgaussian") == 0) {
+		GetDistFunction()->distance = ANN::fcn_cutgaussian_nhood;
+	} else if (strcmp (GetDistFunction()->name, "epanechicov") == 0) {
+		GetDistFunction()->distance = ANN::fcn_epanechicov_nhood;
+	} else {
+		printf("No preimplemented function recognized. No deassignment done.");
+		return 0;
+	}
+	printf("Preimplemented function recognized. Deassignment done.");
+	return 1;
+}
 
 // new reference implementation
 ANNGPGPU::BMUExport hostGetMin(std::vector<ANNGPGPU::BMUExport> &vec) {
@@ -180,11 +240,11 @@ void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 		const float &fConscRate,
 		const ANN::DistFunction &DistFunc )
 {
-	float fLambda 	= iCycles / log(fSigma0);
-
 	int iMin 		= 0;
 	int iMax 		= InputSet.GetNrElements()-1;
 	int iProgCount 		= 1;
+
+	float fLambda 		= iCycles / log(fSigma0);
 	float fSigmaT 		= fSigma0;
 	float fLearningRate 	= fLearningRate0;
 
@@ -215,20 +275,14 @@ void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 
 		// Find BMNeuron 
 		BMUExport BMUExp = hostSOMFindBMNeuronID(SExp, fConscRate);
- 
+
 		// Propagate BW SM 2.0
-#if __CUDA_ARCH__ >= 200
-#warning Compiling with SM 2.0 or higher.
-		external_device_func_t *dvFuncPtr = NULL;
-		*dvFuncPtr 	= DistFunc.distance; 						// SM 2.0
-		assert(dvFuncPtr != NULL);
 		hostSOMPropagateBW( SExp,
-			BMUExp,
-			fSigmaT,
-			fLearningRate,
-			sm20distance_functor(fSigmaT, dvFuncPtr));
-#else //__CUDA_ARCH__ < 200
-#warning Compiling with SM 1.3 or less.
+			BMUExp,									// const
+			fSigmaT,								// const
+			fLearningRate,								// const
+			sm20distance_functor(fSigmaT, DistFunc.distance)); 			// const
+/*
 		// Propagate BW SM 1.3
 		if (strcmp (DistFunc.name, "gaussian") == 0) {
 			hostSOMPropagateBW( SExp,
@@ -261,7 +315,7 @@ void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 					fLearningRate,						// const
 					sm13epanechicov_functor(fSigmaT)); 			// const
 		}
-#endif
+*/
 	}
 }
 

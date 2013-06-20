@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 	ANNGPGPU::SOMNetGPU gpu;
 	gpu.CreateSOM(3, 1, w1,w1);
 	gpu.SetTrainingSet(input);
-	gpu.SetDistFunction(&ANN::Functions::fcn_bubble);
+	gpu.SetDistFunction(&ANN::Functions::fcn_gaussian);
 
 	gpu.Training(500);
 

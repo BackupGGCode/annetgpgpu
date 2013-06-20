@@ -7,4 +7,4 @@
 %ignore ANN::Connect(AbsNeuron *, AbsNeuron *, const float &, const float &, const bool &);
 %ignore ANN::Connect(AbsNeuron *, AbsLayer *, const std::vector<float> &, const std::vector<float> &, const bool &);
 
-%include "AbsNeuron.h"
+%include "base/AbsNeuron.h"

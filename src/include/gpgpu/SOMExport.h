@@ -1,10 +1,12 @@
 #ifndef ANSOMEXP_H_
 #define ANSOMEXP_H_
 
+#ifndef SWIG
 #include <vector>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include "../containers/2DArray.h"
+#include "../gpgpu/2DArray.h"
+#endif
 
 
 namespace ANNGPGPU {

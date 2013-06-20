@@ -55,8 +55,7 @@ typedef uint32_t NetTypeFlag;
  * @brief Represents a container for all layers in the network.
  * @author Daniel "dgrat" Frenzel
  */
-class AbsNet //: public Importer, public Exporter
-{
+class AbsNet {
 protected:
 	NetTypeFlag m_fTypeFlag;
 
@@ -183,7 +182,7 @@ public:
 	/**
 	 *  @brief Sets training data of the net.
 	 */
-	virtual void SetTrainingSet(TrainingSet *pData);
+	virtual void SetTrainingSet(const TrainingSet *pData);
 	/**
 	 *  @brief Sets training data of the net.
 	 */
@@ -249,7 +248,7 @@ public:
 	 * @brief Access of the currently used transfer function of the network.
 	 * @return Returns the current net (activation) function.
 	 */
-	virtual const TransfFunction *GetTransfFunction() const;
+	virtual TransfFunction *GetTransfFunction();
 
 	/**
 	 * @brief Save net's content to filesystem
