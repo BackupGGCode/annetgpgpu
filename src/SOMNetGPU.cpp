@@ -31,7 +31,7 @@ int SOMNetGPU::GetCudaDeviceCount() const {
 	    iGPU_N = MAX_GPU_COUNT;
 	}
 	printf("CUDA-capable device count: %i\n", iGPU_N);
-
+#if __CUDA_CAB__ >= 20
 	for(int i = 0; i < iGPU_N; i++) {
 		cudaDeviceProp props;
 		checkCudaErrors(cudaGetDeviceProperties(&props, i) );
@@ -39,9 +39,10 @@ int SOMNetGPU::GetCudaDeviceCount() const {
 			iSM20_N++;
 		}
 	}
-	printf("SM 2.0 capable device count: %i\n", iSM20_N);
-	
-	return iSM20_N;
+	iGPU_N = iSM20_N;
+	printf("CUDA SM 2.0 capable device count: %i\n", iSM20_N);
+#endif
+	return iGPU_N;
 }
 
 std::vector<SplittedNetExport*> SOMNetGPU::SplitDeviceData() const {
@@ -134,8 +135,10 @@ SOMNetGPU::SOMNetGPU() {
 
 	m_fTypeFlag 	= ANN::ANNetSOM;
 
+#if __CUDA_CAB__ >= 20
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
+#endif
 }
 
 SOMNetGPU::SOMNetGPU(AbsNet *pNet) {
@@ -156,8 +159,10 @@ SOMNetGPU::SOMNetGPU(AbsNet *pNet) {
 
 	m_fTypeFlag 	= ANN::ANNetSOM;
 	
+#if __CUDA_CAB__ >= 20
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
+#endif
 }
 
 SOMNetGPU::~SOMNetGPU() {
@@ -197,14 +202,18 @@ void SOMNetGPU::Training(const unsigned int &iCycles) {
 
 void SOMNetGPU::SetDistFunction (const ANN::DistFunction *pFCN) {
 	SOMNet::SetDistFunction(pFCN);
+#if __CUDA_CAB__ >= 20
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
+#endif
 }
 
 void SOMNetGPU::SetDistFunction (const ANN::DistFunction &pFCN) {
 	SOMNet::SetDistFunction(pFCN);
+#if __CUDA_CAB__ >= 20
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
+#endif
 }
 
 }

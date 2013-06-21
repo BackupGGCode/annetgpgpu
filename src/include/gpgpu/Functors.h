@@ -127,6 +127,7 @@ struct hebbian_functor {
 };
 //////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////
+#if __CUDA_CAB__ >= 20
 typedef float (*pDistanceFu) (float, float);
 struct sm20distance_functor {
 	float fSigmaT;
@@ -139,5 +140,6 @@ struct sm20distance_functor {
 		return (*m_pfunc)(sqrt(dist), fSigmaT);
 	}
 };
+#endif
 
 #endif

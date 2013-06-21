@@ -22,7 +22,7 @@
 
 using namespace ANNGPGPU;
 
-
+#if __CUDA_CAB__ >= 20
 typedef float (*pDistanceFu) (float, float);
 __device__ pDistanceFu pBubble 		= ANN::fcn_bubble_nhood; 
 __device__ pDistanceFu pGaussian 	= ANN::fcn_gaussian_nhood; 
@@ -79,6 +79,7 @@ bool SOMNetGPU::DeassignDistanceFunction() {
 	printf("Preimplemented function recognized. Deassignment done.");
 	return 1;
 }
+#endif
 
 // new reference implementation
 ANNGPGPU::BMUExport hostGetMin(std::vector<ANNGPGPU::BMUExport> &vec) {
@@ -275,14 +276,14 @@ void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 
 		// Find BMNeuron 
 		BMUExport BMUExp = hostSOMFindBMNeuronID(SExp, fConscRate);
-
+#if __CUDA_CAB__ >= 20
 		// Propagate BW SM 2.0
 		hostSOMPropagateBW( SExp,
 			BMUExp,									// const
 			fSigmaT,								// const
 			fLearningRate,								// const
 			sm20distance_functor(fSigmaT, DistFunc.distance)); 			// const
-/*
+#else
 		// Propagate BW SM 1.3
 		if (strcmp (DistFunc.name, "gaussian") == 0) {
 			hostSOMPropagateBW( SExp,
@@ -315,7 +316,7 @@ void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 					fLearningRate,						// const
 					sm13epanechicov_functor(fSigmaT)); 			// const
 		}
-*/
+#endif
 	}
 }
 

@@ -34,7 +34,8 @@ private:
 	 * @return Number of cuda capable devices
 	 */
 	int GetCudaDeviceCount() const;
-	
+
+#if __CUDA_CAB__ >= 20
 	/**
 	 * Assigns a function pointer for the distance function: "GetDistFunction()->distance"
 	 * This assignment is (due to CUDA related restrictions) only working, if a preimplemented distance function is used.
@@ -48,7 +49,8 @@ private:
 	 * Free device memory after assignment.
 	 */
 	bool DeassignDistanceFunction();
-	
+#endif
+
 public:
 	SOMNetGPU();
 	SOMNetGPU(ANN::AbsNet *pNet);

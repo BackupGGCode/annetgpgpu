@@ -4,6 +4,9 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
 PROJECT (ANNetGPGPU)
 
+# Standard CUDA architecture
+SET(__CUDA_CAB__ "13")
+
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
@@ -32,7 +35,7 @@ ENDIF()
 
 IF (CUDA_FOUND)
   LIST(APPEND CUDA_NVCC_FLAGS -Xcompiler -fopenmp)
-  LIST(APPEND CUDA_NVCC_FLAGS -arch=sm_20)
+  LIST(APPEND CUDA_NVCC_FLAGS -arch=sm_${__CUDA_CAB__})
   LIST(APPEND CUDA_NVCC_FLAGS --pre-include gcc_cuda_compat.h)
 
   ADD_DEFINITIONS("-DCUDA") # needed for conditional compilation of some files
@@ -90,7 +93,7 @@ SET( ANCUDASourceFiles
 # Create a library called "ANNet" which includes the source files listed in "ANSourceFiles".
 # Build ANNet C library
 IF (CUDA_FOUND)  
-  CUDA_ADD_LIBRARY (ANNet STATIC ${ANCUDASourceFiles} ${ANSourceFiles} ${BZIP_INCLUDE_DIRS})
+  CUDA_ADD_LIBRARY (ANNet STATIC ${ANCUDASourceFiles} ${ANSourceFiles} ${BZIP_INCLUDE_DIRS} OPTIONS -D __CUDA_CAB__=${__CUDA_CAB__})
 ELSEIF (NOT CUDA_FOUND)
   ADD_LIBRARY (ANNet STATIC ${ANSourceFiles} ${BZIP_INCLUDE_DIRS})
 ENDIF(CUDA_FOUND)
