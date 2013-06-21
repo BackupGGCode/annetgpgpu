@@ -22,6 +22,8 @@
 
 #include "../math/Functions.h"
 
+#include "../SOMNet.h"
+
 #include <cassert>
 #include <vector>
 
@@ -32,49 +34,37 @@
 /*
  * BP kernels
  */
-//////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<float>
-hostBPCalcDelta( const thrust::device_vector<float> &vNeurOut,
-		const std::vector<float> &vTrainOut );
-//////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<thrust::device_vector<float> > 
-hostBPPropagateFW( const std::vector<ANNGPGPU::F2DArray> &vEdgeMatrices,
-		const std::vector<ANNGPGPU::F2DArray> &vBiasEdgeMatrices,
-		const std::vector<float> &vInput,
-		const ANN::TransfFunction &function);
+std::vector<float> hostBPCalcDelta
+( const thrust::device_vector<float> &vNeurOut, 
+  const std::vector<float> &vTrainOut );
 
-void hostBPPropagateBW( std::vector<ANNGPGPU::F2DArray> &dvEdgeMatricesI,
-		std::vector<ANNGPGPU::F2DArray> &dvMomentums,
-		std::vector<thrust::device_vector<float> > &vErrorDeltas,
-		const std::vector<thrust::device_vector<float> > &vNeuronValues,
-		const float &fLearningRate,
-		const float &fWeightDecay,
-		const float &fMomentum,
-		const ANN::TransfFunction &function);
+std::vector<thrust::device_vector<float> > hostBPPropagateFW
+( const std::vector<ANNGPGPU::F2DArray> &vEdgeMatrices,
+  const std::vector<ANNGPGPU::F2DArray> &vBiasEdgeMatrices,
+  const std::vector<float> &vInput,
+  const ANN::TransfFunction &function );
+
+void hostBPPropagateBW
+( std::vector<ANNGPGPU::F2DArray> &dvEdgeMatricesI,
+  std::vector<ANNGPGPU::F2DArray> &dvMomentums,
+  std::vector<thrust::device_vector<float> > &vErrorDeltas,
+  const std::vector<thrust::device_vector<float> > &vNeuronValues,
+  const float &fLearningRate,
+  const float &fWeightDecay,
+  const float &fMomentum,
+  const ANN::TransfFunction &function );
 
 /*
  * SOM kernels
  */
-//////////////////////////////////////////////////////////////////////////////////////////////
-ANNGPGPU::BMUExport hostGetMin(std::vector<ANNGPGPU::BMUExport> &vec);
-std::pair<float, unsigned int> devGetMin(const thrust::device_vector<float> &vec);
-//////////////////////////////////////////////////////////////////////////////////////////////
-ANNGPGPU::BMUExport
-hostSOMFindBMNeuronID(std::vector<ANNGPGPU::SplittedNetExport*> &SExp, const float &fConscienceRate);
-//////////////////////////////////////////////////////////////////////////////////////////////
-template<typename BinaryFunction>
-void hostSOMPropagateBW( std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
-		const ANNGPGPU::BMUExport &,
-		const float &fSigmaT,
-		const float &fLearningRate,
-		const BinaryFunction &binaryDistFunc  );
-
-void hostSOMTraining( std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
-		const ANN::TrainingSet &InputSet,
-		const unsigned int &iCycles,
-		const float &fSigma0,
-		const float &fLearningRate0,
-		const float &fConscienceRate,
-		const ANN::DistFunction &pDistFunc );
+void hostSOMTraining
+( std::vector<ANNGPGPU::SplittedNetExport*> &SExp,
+  const ANN::TrainingSet &InputSet,
+  const unsigned int &iCycles,
+  const float &fSigma0,
+  const float &fLearningRate0,
+  const float &fConscienceRate,
+  const ANN::DistFunction &pDistFunc,
+  const ANN::TrainingMode &eMode );
 
 #endif /* ANKERNELS_H_ */

@@ -22,7 +22,7 @@
 
 using namespace ANNGPGPU;
 
-#if __CUDA_CAB__ >= 20
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
 typedef float (*pDistanceFu) (float, float);
 __device__ pDistanceFu pBubble 		= ANN::fcn_bubble_nhood; 
 __device__ pDistanceFu pGaussian 	= ANN::fcn_gaussian_nhood; 
@@ -233,90 +233,115 @@ void hostSOMPropagateBW( std::vector<SplittedNetExport*> &SExp,
 	}
 }
 
+void hostSOMTrainHelper( std::vector<SplittedNetExport*> &SExp,
+		const ANN::TrainingSet &InputSet,
+		const unsigned int &iCycles,
+		const float &fSigma0, 
+		const float &fLearningRate0,
+		const float &fConscRate,
+		const ANN::DistFunction &DistFunc, 
+		const unsigned int &iPatternID,
+		const unsigned int &iCycle) 
+{
+	assert(iPatternID < InputSet.GetNrElements() );
+
+	float fLambda 		= iCycles / log(fSigma0);
+	float fSigmaT 		= fSigma0;
+	float fLearningRate 	= fLearningRate0;
+
+	// Set Input
+	std::vector<float> vCurInput = InputSet.GetInput(iPatternID);
+	for(int iDevID = 0; iDevID < static_cast<int>(SExp.size() ); iDevID++) {
+		checkCudaErrors(cudaSetDevice(iDevID) );
+
+		thrust::device_vector<float> *p_dvInputVector = new thrust::device_vector<float>(vCurInput.size() );
+		thrust::copy(vCurInput.begin(), vCurInput.end(), p_dvInputVector->begin() );
+		SExp[iDevID]->dvInput = p_dvInputVector;
+	}
+
+	// Calc fSigmaT if conscience is _not_ used
+	fSigmaT 	= DistFunc.rad_decay(fSigma0, iCycle, fLambda); 		// SM 1.3
+	fLearningRate 	= DistFunc.lrate_decay(fLearningRate0, iCycle, iCycles); 	// SM 1.3
+
+	// Find BMNeuron 
+	BMUExport BMUExp = hostSOMFindBMNeuronID(SExp, fConscRate);
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
+	// Propagate BW SM 2.0
+	hostSOMPropagateBW( SExp,
+		BMUExp,									// const
+		fSigmaT,								// const
+		fLearningRate,								// const
+		sm20distance_functor(fSigmaT, DistFunc.distance)); 			// const
+#else
+	// Propagate BW SM 1.3
+	if (strcmp (DistFunc.name, "gaussian") == 0) {
+		hostSOMPropagateBW( SExp,
+				BMUExp,							// const
+				fSigmaT,						// const
+				fLearningRate,						// const
+				sm13gaussian_functor(fSigmaT)); 			// const
+	} else if (strcmp (DistFunc.name, "mexican") == 0) {
+		hostSOMPropagateBW( SExp,
+				BMUExp,							// const
+				fSigmaT,						// const
+				fLearningRate,						// const
+				sm13mexican_functor(fSigmaT)); 				// const
+	} else if (strcmp (DistFunc.name, "bubble") == 0) {
+		hostSOMPropagateBW( SExp,
+				BMUExp,							// const
+				fSigmaT,						// const
+				fLearningRate,						// const
+				sm13bubble_functor(fSigmaT)); 				// const
+	} else if (strcmp (DistFunc.name, "cutgaussian") == 0) {
+		hostSOMPropagateBW( SExp,
+				BMUExp,							// const
+				fSigmaT,						// const
+				fLearningRate,						// const
+				sm13cut_gaussian_functor(fSigmaT)); 			// const
+	} else if (strcmp (DistFunc.name, "epanechicov") == 0) {
+		hostSOMPropagateBW( SExp,
+				BMUExp,							// const
+				fSigmaT,						// const
+				fLearningRate,						// const
+				sm13epanechicov_functor(fSigmaT)); 			// const
+	}
+#endif
+}
+
 void hostSOMTraining( std::vector<SplittedNetExport*> &SExp,
 		const ANN::TrainingSet &InputSet,
 		const unsigned int &iCycles,
 		const float &fSigma0, 
 		const float &fLearningRate0,
 		const float &fConscRate,
-		const ANN::DistFunction &DistFunc )
+		const ANN::DistFunction &DistFunc,
+		const ANN::TrainingMode &eMode )
 {
 	int iMin 		= 0;
 	int iMax 		= InputSet.GetNrElements()-1;
 	int iProgCount 		= 1;
 
-	float fLambda 		= iCycles / log(fSigma0);
-	float fSigmaT 		= fSigma0;
-	float fLearningRate 	= fLearningRate0;
-
-	for(int i = 0; i < static_cast<int>(iCycles); i++) {
+	for(int iCycle = 0; iCycle < static_cast<int>(iCycles); iCycle++) {
 		if(iCycles >= 10) {
-			if(((i+1) / (iCycles/10)) == iProgCount && (i+1) % (iCycles/10) == 0) {
-				std::cout<<"Current training progress calculated by the GPU is: "<<iProgCount*10.f<<"%/Step="<<i+1<<std::endl;
+			if(((iCycle+1) / (iCycles/10)) == iProgCount && (iCycle+1) % (iCycles/10) == 0) {
+				std::cout<<"Current training progress calculated by the GPU is: "<<iProgCount*10.f<<"%/Step="<<iCycle+1<<std::endl;
 				iProgCount++;
 			}
 		} 
 		else {
-			std::cout<<"Current training progress calculated by the CPU is: "<<(float)(i+1.f)/(float)iCycles*100.f<<"%/Step="<<i+1<<std::endl;
+			std::cout<<"Current training progress calculated by the CPU is: "<<(float)(iCycle+1.f)/(float)iCycles*100.f<<"%/Step="<<iCycle+1<<std::endl;
 		}
 
-		// Set Input
-		std::vector<float> vCurInput = InputSet.GetInput(ANN::RandInt(iMin, iMax) );
-		for(int iDevID = 0; iDevID < static_cast<int>(SExp.size() ); iDevID++) {
-			checkCudaErrors(cudaSetDevice(iDevID) );
-
-			thrust::device_vector<float> *p_dvInputVector = new thrust::device_vector<float>(vCurInput.size() );
-			thrust::copy(vCurInput.begin(), vCurInput.end(), p_dvInputVector->begin() );
-			SExp[iDevID]->dvInput = p_dvInputVector;
+		if(eMode == ANN::ANRandomMode) {
+			unsigned int iRandID = ANN::RandInt(iMin, iMax);
+			hostSOMTrainHelper(SExp, InputSet, iCycles, fSigma0, fLearningRate0, fConscRate, DistFunc, iRandID, iCycle);
 		}
-
-		// Calc fSigmaT if conscience is _not_ used
-		fSigmaT 	= DistFunc.rad_decay(fSigma0, i, iCycles); 			// SM 1.3
-		fLearningRate 	= DistFunc.lrate_decay(fLearningRate0, i, iCycles); 		// SM 1.3
-
-		// Find BMNeuron 
-		BMUExport BMUExp = hostSOMFindBMNeuronID(SExp, fConscRate);
-#if __CUDA_CAB__ >= 20
-		// Propagate BW SM 2.0
-		hostSOMPropagateBW( SExp,
-			BMUExp,									// const
-			fSigmaT,								// const
-			fLearningRate,								// const
-			sm20distance_functor(fSigmaT, DistFunc.distance)); 			// const
-#else
-		// Propagate BW SM 1.3
-		if (strcmp (DistFunc.name, "gaussian") == 0) {
-			hostSOMPropagateBW( SExp,
-					BMUExp,							// const
-					fSigmaT,						// const
-					fLearningRate,						// const
-					sm13gaussian_functor(fSigmaT)); 			// const
-		} else if (strcmp (DistFunc.name, "mexican") == 0) {
-			hostSOMPropagateBW( SExp,
-					BMUExp,							// const
-					fSigmaT,						// const
-					fLearningRate,						// const
-					sm13mexican_functor(fSigmaT)); 				// const
-		} else if (strcmp (DistFunc.name, "bubble") == 0) {
-			hostSOMPropagateBW( SExp,
-					BMUExp,							// const
-					fSigmaT,						// const
-					fLearningRate,						// const
-					sm13bubble_functor(fSigmaT)); 				// const
-		} else if (strcmp (DistFunc.name, "cutgaussian") == 0) {
-			hostSOMPropagateBW( SExp,
-					BMUExp,							// const
-					fSigmaT,						// const
-					fLearningRate,						// const
-					sm13cut_gaussian_functor(fSigmaT)); 			// const
-		} else if (strcmp (DistFunc.name, "epanechicov") == 0) {
-			hostSOMPropagateBW( SExp,
-					BMUExp,							// const
-					fSigmaT,						// const
-					fLearningRate,						// const
-					sm13epanechicov_functor(fSigmaT)); 			// const
+		// The input vectors are presented to the network in serial order
+		else if(eMode == ANN::ANSerialMode) {
+			for(unsigned int j = 0; j < InputSet.GetNrElements(); j++) {
+				hostSOMTrainHelper(SExp, InputSet, iCycles, fSigma0, fLearningRate0, fConscRate, DistFunc, j, iCycle);
+			}
 		}
-#endif
 	}
 }
 

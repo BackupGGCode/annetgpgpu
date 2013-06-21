@@ -31,7 +31,7 @@ int SOMNetGPU::GetCudaDeviceCount() const {
 	    iGPU_N = MAX_GPU_COUNT;
 	}
 	printf("CUDA-capable device count: %i\n", iGPU_N);
-#if __CUDA_CAB__ >= 20
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
 	for(int i = 0; i < iGPU_N; i++) {
 		cudaDeviceProp props;
 		checkCudaErrors(cudaGetDeviceProperties(&props, i) );
@@ -135,7 +135,7 @@ SOMNetGPU::SOMNetGPU() {
 
 	m_fTypeFlag 	= ANN::ANNetSOM;
 
-#if __CUDA_CAB__ >= 20
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
 #endif
@@ -159,7 +159,7 @@ SOMNetGPU::SOMNetGPU(AbsNet *pNet) {
 
 	m_fTypeFlag 	= ANN::ANNetSOM;
 	
-#if __CUDA_CAB__ >= 20
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
 #endif
@@ -169,7 +169,7 @@ SOMNetGPU::~SOMNetGPU() {
 	checkCudaErrors(cudaDeviceReset() );
 }
 
-void SOMNetGPU::Training(const unsigned int &iCycles) {
+void SOMNetGPU::Training(const unsigned int &iCycles, const ANN::TrainingMode &eMode) {
 	assert(iCycles > 0);
 	assert(m_fSigma0 > 0.f);
 	if(GetTrainingSet() == NULL) {
@@ -183,13 +183,14 @@ void SOMNetGPU::Training(const unsigned int &iCycles) {
 	StartTimer();
 
 	printf("Calculate SOM ..\n");
-	hostSOMTraining(SExp,
+	hostSOMTraining( SExp,
 		*GetTrainingSet(),
 		iCycles,
 		m_fSigma0,
 		m_fLearningRate,
 		m_fConscienceRate,
-		*GetDistFunction() );
+		*GetDistFunction(),
+		eMode );
 	
 	printf("GPU Processing time: %f (ms)\n", GetTimer() );
 
@@ -202,7 +203,7 @@ void SOMNetGPU::Training(const unsigned int &iCycles) {
 
 void SOMNetGPU::SetDistFunction (const ANN::DistFunction *pFCN) {
 	SOMNet::SetDistFunction(pFCN);
-#if __CUDA_CAB__ >= 20
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
 #endif
@@ -210,7 +211,7 @@ void SOMNetGPU::SetDistFunction (const ANN::DistFunction *pFCN) {
 
 void SOMNetGPU::SetDistFunction (const ANN::DistFunction &pFCN) {
 	SOMNet::SetDistFunction(pFCN);
-#if __CUDA_CAB__ >= 20
+#if defined(__CUDA_CAB__) && (__CUDA_CAB__ >= 20)
 	// Set a function pointer to the currently used neighborhood function
 	AssignDistanceFunction();
 #endif

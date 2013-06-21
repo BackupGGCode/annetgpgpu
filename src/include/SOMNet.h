@@ -26,6 +26,11 @@ class SOMNeuron;
 class Centroid;
 class DistFunction;
 
+enum {
+	ANRandomMode 	= 1 << 0,	// type of layer
+	ANSerialMode 	= 1 << 1,	// type of layer
+};
+typedef uint32_t TrainingMode;
 
 /**
  * @class SOMNet
@@ -55,6 +60,8 @@ protected:
 	unsigned int 	m_iHeightI;	// height of the input layer
 	unsigned int 	m_iWidthO;	// width of the output layer
 	unsigned int 	m_iHeightO; 	// height of the output layer
+
+	void TrainHelper(unsigned int);
 
 protected:
 	/**
@@ -171,8 +178,11 @@ public:
 	/**
 	 * @brief Trains the network with given input until iCycles is reached.
 	 * @param iCycles Maximum number of training cycles.
+	 * @param eMode 
+	 * Value: ANRandomMode is faster, because one random input pattern is presented and a new cycle starts.\n
+	 * Value: ANSerialMode means, that all input patterns are presented in order. Then a new cycle starts.
 	 */
-	void Training(const unsigned int &iCycles = 1000);
+	void Training(const unsigned int &iCycles = 1000, const TrainingMode &eMode = ANN::ANRandomMode);
 
 	/**
 	 * @brief Clustering results of the network.

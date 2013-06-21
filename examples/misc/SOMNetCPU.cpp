@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 	ANN::SOMNet cpu;
 	cpu.CreateSOM(3, 1, w1,w1);
 	cpu.SetTrainingSet(input);
-	cpu.Training(500);
+	cpu.Training(100, ANN::ANSerialMode);
 
 	SOMReader w(w1, w1, w2);
 	for(int x = 0; x < w1*w1; x++) {

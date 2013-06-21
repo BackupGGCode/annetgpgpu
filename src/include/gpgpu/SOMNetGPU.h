@@ -59,8 +59,11 @@ public:
 	/**
 	 * Trains the network with given input until iCycles is reached.
 	 * @param iCycles Maximum number of training cycles.
+	 * @param eMode 
+	 * Value: ANRandomMode is faster, because one random input pattern is presented and a new cycle starts.\n
+	 * Value: ANSerialMode means, that all input patterns are presented in order. Then a new cycle starts.
 	 */
-	virtual void Training(const unsigned int &iCycles = 1000);
+	virtual void Training(const unsigned int &iCycles = 1000, const ANN::TrainingMode &eMode = ANN::ANRandomMode);
 	
 	/**
 	 * @brief Sets the neighborhood and decay function of the network together.

@@ -313,7 +313,23 @@ void SOMNet::CreateSOM(	const unsigned int &iWidthI, const unsigned int &iHeight
 	FindSigma0();
 }
 
-void SOMNet::Training(const unsigned int &iCycles) {
+void SOMNet::TrainHelper(unsigned int i) {
+	assert(i < GetTrainingSet()->GetNrElements() );
+	
+	SetInput(GetTrainingSet()->GetInput(i) );
+
+	// Present the input vector to each node and determine the BMU
+	FindBMNeuron();
+
+	// Calculate the width of the neighborhood for this time step
+	m_fSigmaT 		= m_DistFunction->rad_decay(m_fSigma0, m_iCycle, m_fLambda);
+	m_fLearningRateT 	= m_DistFunction->lrate_decay(m_fLearningRate, m_iCycle, m_iCycles);
+
+	// Adjust the weight vector of the BMU and its neighbors
+	PropagateBW();
+}
+
+void SOMNet::Training(const unsigned int &iCycles, const TrainingMode &eMode) {
 	assert(iCycles > 0);
 	assert(m_fSigma0 > 0.f);
 	if(GetTrainingSet() == NULL) {
@@ -340,18 +356,16 @@ void SOMNet::Training(const unsigned int &iCycles) {
 		}
 
 		// The input vectors are presented to the network at random
-		int iRandID = RandInt(iMin, iMax);
-		SetInput(GetTrainingSet()->GetInput(iRandID) );
-
-		// Present the input vector to each node and determine the BMU
-		FindBMNeuron();
-
-		// Calculate the width of the neighborhood for this time step
-		m_fSigmaT 		= m_DistFunction->rad_decay(m_fSigma0, m_iCycle, m_fLambda);
-		m_fLearningRateT 	= m_DistFunction->lrate_decay(m_fLearningRate, m_iCycle, m_iCycles);
-
-		// Adjust the weight vector of the BMU and its neighbors
-		PropagateBW();
+		if(eMode == ANN::ANRandomMode) {
+			unsigned int iRandID = RandInt(iMin, iMax);
+			TrainHelper(iRandID);
+		}
+		// The input vectors are presented to the network in serial order
+		else if(eMode == ANN::ANSerialMode) {
+			for(unsigned int i = 0; i < GetTrainingSet()->GetNrElements(); i++) {
+				TrainHelper(i);
+			}
+		}
 	}
 }
 
