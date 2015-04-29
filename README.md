@@ -96,7 +96,7 @@ An advantage of the library is it's modular layout. You can implement your own e
 ### 06/2013 Implementation of multi GPU-support for SOMs ###
 I recently optimized the implementation of SOMs calculated by GPUs. As a result I was able to reduce the number of matrix operations, which led to a reduced calculation time and probably to a reduced amount of VRAM. Furthermore the multi-GPU support should now work correctly and is activated by default. The calculation is done asynchronously and can work on different devices (for example: GTX 260 and GTX 570). But maybe the support of SM 1.3 will fall in later releases, due to lacking support of function pointers.
 ### 05/2013 Implementation of a Python Interface ###
-Added python bindings. Made SOM-part more suitable for usage of clustering analysis as an alternative for the kmeans-algorithm. The condensed python example below shows what's new: Centroids as result of the clusterization approach (here with four clusters) instead of a whole map of 128x128 nodes as known in the previous [example](https://code.google.com/p/annetgpgpu/wiki/QuickStartGuide). Furthermore I implemented standard python output as binding extension for many container-classes.
+Added python bindings. Made SOM-part more suitable for usage of clustering analysis as an alternative for the kmeans-algorithm. The condensed python example below shows what's new: Centroids as result of the clusterization approach (here with four clusters) instead of a whole map of 128x128 nodes as known in the previous [example](https://github.com/BackupGGCode/annetgpgpu/blob/wiki/QuickStartGuide.md). Furthermore I implemented standard python output as binding extension for many container-classes.
 ```
 # .. input definition ..
 ..
