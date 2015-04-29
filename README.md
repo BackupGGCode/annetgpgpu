@@ -1,12 +1,12 @@
 # ANNetGPGPU - Neural network library with GPU support #
 ## Introduction ##
-ANNet is a small library to create neural nets. A hallmark of the project are implementations of several neural network models with usage of [OpenMP](http://openmp.org/wp/) and/or [Thrust](http://code.google.com/p/thrust/). See [quickstart guide](QuickStartGuide.md) to learn how to use them. Especially self organizing maps (SOMs) benefit strongly from calculations on GPUs and speed-ups by a factor of 100 can easily be achieved for bigger networks (>256x256 nodes) even on old graphic hardware. The GPU implementation of SOMs is also supporting asynchronous calculation on more than one device. So computation on clusters is possible.
+ANNet is a small library to create neural nets. A hallmark of the project are implementations of several neural network models with usage of [OpenMP](http://openmp.org/wp/) and/or [Thrust](https://thrust.github.io/). See [quickstart guide](QuickStartGuide.md) to learn how to use them. Especially self organizing maps (SOMs) benefit strongly from calculations on GPUs and speed-ups by a factor of 100 can easily be achieved for bigger networks (>256x256 nodes) even on old graphic hardware. The GPU implementation of SOMs is also supporting asynchronous calculation on more than one device. So computation on clusters is possible.
 
 ## Build ##
 I wrote some cmake-scripts to make it easier to build the library. For building the library with all features you need to have installed:
   * [Qt4](http://qt.nokia.com/products/) (just for some examples and designer required)
   * [SWIG for python bindings](http://www.swig.org/) (just required for python bindings)
-  * [CUDA](http://www.nvidia.de/object/cuda_home_new_de.html)/[Thrust](http://code.google.com/p/thrust/) (shipped with CUDA; just required for GPGPU implementation)
+  * [CUDA](http://www.nvidia.de/object/cuda_home_new_de.html)/[Thrust](https://thrust.github.io/) (shipped with CUDA; just required for GPGPU implementation)
   * [Doxygen](http://www.stack.nl/~dimitri/doxygen/) (required for documentation generation)
   * [OpenMP](http://openmp.org/wp/) (required if multi CPU support is wished)
   * Lib [bzip2](http://www.bzip.org/) (**required**)
@@ -156,8 +156,8 @@ Multi layer calculations should work fine on GPU now. Performance difference to 
 At the moment i have somewhat little time (cause of my PhD which hasn't to do at least a bit with programming). ~~Nevertheless it seems to be very likely that `-arch=sm_20` will be needed to build that part of code. This means you need a GTX4/5XX or above.~~ After implementation is finished I try to implement a GPU-accelerated version of a [Neocognitron](http://en.wikipedia.org/wiki/Neocognitron). Hopefully this wouldn't be a very big deal. At the moment it looks like much of the code could get re-cycled for that.
 
 ### 06/07/2012 front end _finished_ ###
-I recently added a front end for the handling of back propagation neural networks (as you see below). Take a look in the yet not finished [guide](http://code.google.com/p/annetgpgpu/wiki/FrontendGuide) for more screenshots. With the current input/output editor it is possible to create instances of networks and train them. This GUI is thought to assist the design process of networks by testing the so builded topology on the fly. Nevertheless I suggest, that input handling/output handling (e.g.: images, libraries,..) should be done by the backend or a seperate tool (see [quickstart guide](QuickStartGuide.md)), if a special network was found to be able to process the content as expected.
-![http://annetgpgpu.googlecode.com/files/Designer.png](http://annetgpgpu.googlecode.com/files/Designer.png)
+I recently added a front end for the handling of back propagation neural networks (as you see below). Take a look in the yet not finished [guide](https://github.com/BackupGGCode/annetgpgpu/blob/wiki/FrontendGuide.md) for more screenshots. With the current input/output editor it is possible to create instances of networks and train them. This GUI is thought to assist the design process of networks by testing the so builded topology on the fly. Nevertheless I suggest, that input handling/output handling (e.g.: images, libraries,..) should be done by the backend or a seperate tool (see [quickstart guide](https://github.com/BackupGGCode/annetgpgpu/blob/wiki/QuickStartGuide.md)), if a special network was found to be able to process the content as expected.
+![http://annetgpgpu.googlecode.com/files/Designer.png](https://web.archive.org/web/20150429193656/http://annetgpgpu.googlecode.com/files/Designer.png)
 
 ## Plans for the future ##
   1. Done: ~~Multi GPU support~~
